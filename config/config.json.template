@@ -1,0 +1,33 @@
+{
+    "LOG": {
+        "console": true,
+        "level": "INFO",
+        "path": "logs",
+        "name": "info.log",
+        "clear": false,
+        "backup_count": 5
+    },
+    "ACCOUNTS": {
+        "host": "https://api.btcgateway.pro",
+        "mark_wss": "wss://www.btcgateway.pro",
+        "trade_wss": "wss://api.btcgateway.pro",
+        "access_key": "xxxxxx",
+        "secret_key": "xxxxxx"
+    },
+    "MARKETS": {
+        "strategy": "BollStrategy",
+        "klines_max_size": 200,
+        "depths_max_size": 100,
+        "trades_max_size": 100,
+        "symbol": "eth",
+        "mark_symbol": "ETH_CW",
+        "trade_symbol": "quarter",
+        "period": "1min",
+        "step": "step6",
+        "lever_rate": 20,
+        "price_tick": 0.01,
+        "loop_interval": 5,
+        "price_offset": 0.0003,
+        "order_cancel_time": 30000
+    }
+}
