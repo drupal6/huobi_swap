@@ -54,7 +54,6 @@ class Trade:
         if data["err-code"] != 0:
             e = Error("Websocket connection authorized failed: {}".format(data))
             logger.error(e, caller=self)
-            SingleTask.run(self._init_success_callback, False, e)
             return
         for sub in self._channel_sub.values():
             await self._t.add_sub(sub)

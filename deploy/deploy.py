@@ -109,4 +109,5 @@ if __name__ == '__main__':
     cmd = "cd %s; unzip -o %s; rm -rf %s;" %(config.remove_path, config.zipfilename, config.zipfilename)
     ssh_cmd(s, cmd)
     close_ssh(s)
+    os.remove(config.zipfilename)
     print("推送完毕")
