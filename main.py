@@ -15,6 +15,9 @@ def initialize():
     elif strategy == "QuantificationStrategy":
         from strategy.quantification_strategy import QuantificationStrategy
         QuantificationStrategy()
+    elif strategy == "Ichimoku":
+        from strategy.ichimoku_strategy import IchimokuStrategy
+        IchimokuStrategy()
     else:
         e = Error(strategy + " not exit.")
         exit(0)
