@@ -7,6 +7,10 @@ import base64
 from urllib.parse import urlencode, quote
 import json
 from requests import Response
+import pandas as pd
+pd.set_option("expand_frame_repr", False)
+import time
+import talib
 
 
 class HuobiPeriod(Enum):
@@ -33,8 +37,8 @@ class HuobiHttpClient(object):
     """
 
     def __init__(self, host=None, key=None, secret=None, timeout=5):
-        self.host = host if host else "https://api-aws.huobi.pro"   # https://api.huobi.br.com # https://api.huobi.co
-        self.api_host = 'api.huobi.vn'  # api.huobi.br.com
+        self.host = host if host else "https://api.huobi.br.com"   # https://api.huobi.br.com # https://api.huobi.co
+        self.api_host = 'api.huobi.br.com'  # api.huobi.br.com
         self.key = key
         self.secret = secret
         self.timeout = timeout
@@ -44,7 +48,6 @@ class HuobiHttpClient(object):
         url = self.host + path
         if params and not verify:
             url = url + '?' + self._build_params(params)
-
         if verify:
             sign_data = self._sign(method.value, path, params)
             url = url + '?' + self._build_params(sign_data)
@@ -53,9 +56,8 @@ class HuobiHttpClient(object):
         # print(url)
         data = json.dumps(body)
 
-        response: Response = requests.request(method.value, url, headers=headers, params=params, data=data, timeout=self.timeout)
+        response: Response = requests.request(method.value, url, headers=headers, data=data, timeout=self.timeout)
         json_data = response.json()
-        # print(json_data)
 
         if response.status_code == 200 and json_data['status'] == 'ok':
             return json_data['data']
@@ -427,12 +429,9 @@ class HuobiHttpClient(object):
 
 if __name__ == '__main__':
 
-    key = "17"
-    secret = "0ef3"
+    key = "xxx"
+    secret = "xxx"
     huobi = HuobiHttpClient(key=key, secret=secret)
-
-    data = huobi.get_kline_data(symbol="btcusdt", period=HuobiPeriod.MINUTE_1, size=200)
-    print(data)
 
     # data = huobi.get_symbols()
     # print(data)
@@ -443,9 +442,26 @@ if __name__ == '__main__':
     # print(data)
     #
     # print(datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+    while True:
+        data = huobi.get_kline_data("btcusdt", HuobiPeriod.MINUTE_1, size=200)
+        df = pd.DataFrame(data, columns={"id": 0, 'vol': 1, 'count': 2, 'open': 3, 'close': 4, 'low': 5,
+                                                   'high': 6, 'amount': 7})
+        df = df[['id', 'open', 'high', 'low', 'close', 'amount']]
+        df = df.iloc[::-1]
+        df["conversion_min"] = talib.MIN(df["low"], 9)
+        df["conversion_max"] = talib.MAX(df["high"], 9)
+        df["conversion"] = (df["conversion_min"] + df["conversion_max"]) / 2
+        df["base_min"] = talib.MIN(df["low"], 26)
+        df["base_max"] = talib.MAX(df["high"], 26)
+        df["base"] = (df["base_min"] + df["base_max"]) / 2
+        df["leada"] = (df["conversion"] + df["base"]) / 2
+        df["leadb_min"] = talib.MIN(df["low"], 52)
+        df["leadb_max"] = talib.MAX(df["high"], 52)
+        df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
+        df = df[['id', 'open', 'high', 'low', 'close', 'amount', 'conversion', 'base', 'leada', 'leadb']]
+        print(df)
+        time.sleep(10)
 
-    # data = huobi.get_kline_data("btcusdt", HuobiPeriod.MINUTE_1, size=20)
-    # print(data)
 
     # data = huobi.get_tickers()
     # print(data)

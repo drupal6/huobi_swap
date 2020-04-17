@@ -13,11 +13,14 @@ class BollStrategy(BaseStrategy):
         self.time_period = 40
         self.nbdev_up = 2.5
         self.nbdev_dn = 2.5
+        self.long = False
+        self.short = False
         super(BollStrategy, self).__init__()
 
     def calculate_signal(self):
         klines = copy.copy(self.klines)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
+        print("calculate_signal")
         df['boll_up'], df['boll_mid'], df['boll_dn'] = talib.BBANDS(df['close'],
                                                                     timeperiod=self.time_period,
                                                                     nbdevup=self.nbdev_up,
@@ -29,15 +32,26 @@ class BollStrategy(BaseStrategy):
         if current_bar["close"] < boll_dn:
             self.short_status = 1
             self.short_trade_size = self.min_volume
-            logger.info("开空信号", caller=self)
+            if not self.short:
+                self.short = True
+                logger.info("开空信号 ", current_bar["close"], caller=self)
+
         elif current_bar["close"] > boll_up:
             self.long_status = 1
             self.long_trade_size = self.min_volume
-            logger.info("开多信号", caller=self)
+            if not self.long:
+                self.long = True
+                logger.info("开多信号 ", current_bar["close"], caller=self)
         elif current_bar["close"] > boll_mid:
             self.short_status = -1
+            if self.short:
+                self.short = False
+                logger.info("平空信号 ", current_bar["close"], caller=self)
         elif current_bar["close"] < boll_mid:
             self.long_status = -1
+            if self.long:
+                self.long = False
+                logger.info("平多信号 ", current_bar["close"], caller=self)
 
 
 
