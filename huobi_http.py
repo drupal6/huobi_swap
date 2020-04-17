@@ -1,90 +1,484 @@
 import requests
+from datetime import datetime
 from enum import Enum
-from threading import Thread, Lock
+import hmac
+import hashlib
+import base64
+from urllib.parse import urlencode, quote
+import json
+from requests import Response
+
+
+class HuobiPeriod(Enum):
+    MINUTE_1 = "1min"
+    MINUTE_5 = "5min"
+    MINUTE_15 = "15min"
+    MINUTE_30 = "30min"
+    HOUR_1 = "60min"
+    DAY_1 = "1day"
+    WEEK_1 = "1week"
+    YEAR_1 = "1year"
 
 
 class RequestMethod(Enum):
-    """
-    请求的方法.
-    """
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
-    DELETE = 'DELETE'
+    GET = "GET"
+    POST = "POST"
+    DELETE = "DELETE"
+    PUT = "PUT"
 
-class HuobiFutureHttp(object):
 
-    def __init__(self, key=None, secret=None, host=None, timeout=5):
+class HuobiHttpClient(object):
+    """
+    火币http client 公开和签名的接口.
+    """
+
+    def __init__(self, host=None, key=None, secret=None, timeout=5):
+        self.host = host if host else "https://api-aws.huobi.pro"   # https://api.huobi.br.com # https://api.huobi.co
+        self.api_host = 'api.huobi.vn'  # api.huobi.br.com
         self.key = key
         self.secret = secret
-        self.host = host if host else "https://api.huobi.pro"
-        self.recv_window = 5000
         self.timeout = timeout
-        self.order_count_lock = Lock()
-        self.order_count = 1_000_000
 
-    def build_parameters(self, params: dict):
-        keys = list(params.keys())
-        keys.sort()
-        return '&'.join([f"{key}={params[key]}" for key in params.keys()])
+    def _request(self, method: RequestMethod, path, params=None, body=None, verify=False):
 
-    def request(self, req_method: RequestMethod, path: str, requery_dict=None, verify=False):
         url = self.host + path
+        if params and not verify:
+            url = url + '?' + self._build_params(params)
 
         if verify:
-            query_str = self._sign(requery_dict)
-            url += '?' + query_str
-        elif requery_dict:
-            url += '?' + self.build_parameters(requery_dict)
+            sign_data = self._sign(method.value, path, params)
+            url = url + '?' + self._build_params(sign_data)
+        headers = {"Content-Type": "application/json"}
+
         # print(url)
-        headers = {"X-MBX-APIKEY": self.key}
+        data = json.dumps(body)
 
-        return requests.request(req_method.value, url=url, headers=headers, timeout=self.timeout).json()
+        response: Response = requests.request(method.value, url, headers=headers, params=params, data=data, timeout=self.timeout)
+        json_data = response.json()
+        # print(json_data)
 
-    def get_kline(self, symbol, interval, limit=500, max_try_time=10):
+        if response.status_code == 200 and json_data['status'] == 'ok':
+            return json_data['data']
+        else:
+            raise Exception(f"请求{url}的数据发生了错误：{json_data}")
+
+    def get_time_stamp(self):
+        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+
+    def _build_params(self, params: dict):
         """
-
-        :param symbol:
-        :param interval:
-        :param start_time:
-        :param end_time:
-        :param limit:
+        构造query string
+        :param params:
         :return:
-        [
-            1499040000000,      // 开盘时间
-            "0.01634790",       // 开盘价
-            "0.80000000",       // 最高价
-            "0.01575800",       // 最低价
-            "0.01577100",       // 收盘价(当前K线未结束的即为最新价)
-            "148976.11427815",  // 成交量
-            1499644799999,      // 收盘时间
-            "2434.19055334",    // 成交额
-            308,                // 成交笔数
-            "1756.87402397",    // 主动买入成交量
-            "28.46694368",      // 主动买入成交额
-            "17928899.62484339" // 请忽略该参数
-        ]
         """
+        return '&'.join([f"{key}={params[key]}" for key in params.keys()])
+
+    def get_symbols(self):
+        """
+        此接口返回所有火币全球站支持的交易对。
+        :return:
+        """
+        path = "/v1/common/symbols"
+
+        # url = self.host + path
+        # json_data = requests.get(url, timeout=self.timeout).json()
+        # if json_data['status'] == 'ok':
+        #     return json_data['data']
+        #
+        # raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        return self._request(RequestMethod.GET, path)
+
+    def get_currencys(self):
+        """
+        此接口返回所有火币全球站支持的币种。
+        :return:
+        """
+        path = "/v1/common/currencys"
+        # url = self.host + path
+        # json_data = requests.get(url, timeout=self.timeout).json()
+        # if json_data['status'] == 'ok':
+        #     return json_data['data']
+        #
+        # raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        return self._request(RequestMethod.GET, path)
+
+    def get_exchange_timestamp(self):
+
+        path = "/v1/common/timestamp"
+        # url = self.host + path
+        # json_data = requests.get(url, timeout=self.timeout).json()
+        # if json_data['status'] == 'ok':
+        #     return json_data['data']
+        #
+        # raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        return self._request(RequestMethod.GET, path)
+
+    def get_kline_data(self, symbol: str, period:HuobiPeriod, size=2000):
         path = "/market/history/kline"
+        params = {"symbol": symbol, "period": period.value, "size": size}
 
-        query_dict = {
-            "symbol": symbol,
-            "period": interval,
-            "size": limit
-        }
+        # url = self.host + path
+        # url = url + '?' + self._build_params(params)
+        # print(url)
+        # exit()
+        # json_data = requests.get(url, params=params, timeout=self.timeout).json()
+        # # json_data = requests.get(url, timeout=self.timeout).json()
+        # if json_data['status'] == 'ok':
+        #     return json_data['data']
+        #
+        # raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
 
-        for i in range(max_try_time):
-            data = self.request(RequestMethod.GET, path, query_dict)
-            if isinstance(data, list) and len(data):
-                return data
+        # 优化后的代码.
+        return self._request(RequestMethod.GET, path, params=params)
+
+    def get_tickers(self):
+        path = "/market/tickers"
+
+        url = self.host + path
+        json_data = requests.get(url, timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['data']
+
+        # return json_data
+        raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        # return self._request(RequestMethod.GET, path)
+
+    def get_ticker(self, symbol=None, depth=5, type='step0'):
+        """
+        :param symbol: btcusdt  orderbook
+        :param depth: value should be: 5 10  20
+        :param type: step0 step1 step2 step3 step 4 step5
+        :return: 返回ticker数据
+        """
+
+        path = "/market/depth"
+        url = self.host + path
+        params = {"symbol": symbol, 'depth': depth, "type": type}
+        json_data = requests.get(url, params=params, timeout=self.timeout).json()
+        # print(json_data)
+        if json_data['status'] == 'ok':
+            return json_data['tick']
+        raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        # return self._request(RequestMethod.GET, path, params=params)
+
+    def get_market_detail(self, symbol):
+        path = "/market/detail"
+        url = self.host + path
+        params = {"symbol": symbol}
+        json_data = requests.get(url, params=params, timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['tick']
+        raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        # return self._request(RequestMethod.GET, path, params=params)
+
+    ######################## private data ###################
+
+
+    def _sign(self, method, path, params=None):
+
+        """
+        该方法为签名的方法
+        :return:
+        """
+        sorted_params = [
+            ("AccessKeyId", self.key),
+            ("SignatureMethod", "HmacSHA256"),
+            ("SignatureVersion", "2"),
+            ("Timestamp", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+        ]
+
+        if params:
+            sorted_params.extend(list(params.items()))
+            sorted_params = list(sorted(sorted_params))
+
+        encode_params = urlencode(sorted_params)
+
+        payload = [method, self.api_host, path, encode_params]
+        payload = "\n".join(payload)
+        payload = payload.encode(encoding="UTF8")
+        secret_key = self.secret.encode(encoding="UTF8")
+        digest = hmac.new(secret_key, payload, digestmod=hashlib.sha256).digest()
+        signature = base64.b64encode(digest).decode("UTF8")
+        sign_params = dict(sorted_params)  # header key  # 路径。
+        sign_params["Signature"] = quote(signature) # uri
+        return sign_params
+
+    def get_accounts(self):
+
+        """
+        获取账户信息的方法.
+         [{'id': 897261, 'type': 'spot', 'subtype': '', 'state': 'working'},
+         {'id': 6703531, 'type': 'margin', 'subtype': 'adausdt', 'state': 'working'},
+          {'id': 7070883, 'type': 'margin', 'subtype': 'bsvusdt', 'state': 'working'},
+          {'id': 5157717, 'type': 'margin', 'subtype': 'btmusdt', 'state': 'working'},
+          {'id': 7471276, 'type': 'margin', 'subtype': 'ethusdt', 'state': 'working'},
+          {'id': 5153600, 'type': 'margin', 'subtype': 'ontusdt', 'state': 'working'},
+          {'id': 6290114, 'type': 'margin', 'subtype': 'xrpusdt', 'state': 'working'},
+          {'id': 3214863, 'type': 'otc', 'subtype': '', 'state': 'working'},
+          {'id': 3360132, 'type': 'point', 'subtype': '', 'state': 'working'}]
+        :return:
+        """
+
+        path = "/v1/account/accounts"
+
+        sign_data = self._sign('GET', path)
+        url = self.host + path
+        url += '?' + self._build_params(sign_data)
+        # print(url)
+        # exit()
+        json_data = requests.get(url, headers={'Content-Type': 'application/json'}, timeout=self.timeout).json()
+        # json_data = requests.get(url, timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['data']
+
+        raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        # return self._request(RequestMethod.GET, path, verify=True)
+
+    def get_account_balance(self, account_id):
+        """
+        查询指定账户的余额，支持以下账户：
+        spot：现货账户， margin：杠杆账户，otc：OTC 账户，point：点卡账户
+        :param account_id:
+        :return:
+        """
+        path = f'/v1/account/accounts/{account_id}/balance'
+        print(path)
+        # exit()
+        url = self.host + path
+        sign_data = self._sign('GET', path)
+        # print(sign_data)
+        url += '?' + self._build_params(sign_data)
+        print(url)
+        # exit()
+        json_data = requests.get(url, timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['data']
+        raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        # return self._request(RequestMethod.GET, path, verify=True)
+
+    def place_order(self, account_id, symbol, type, amount, price=None, source='api', stop_price=None, operator=None):
+        """
+
+        :param account_id: 账户 ID，使用 GET /v1/account/accounts 接口查询。现货交易使用 ‘spot’ 账户的 account-id；杠杆交易，请使用 ‘margin’ 账户的 account-id
+        :param symbol: 交易对, 例如btcusdt, ethbtc
+        :param type: 订单类型，包括buy-market, sell-market, buy-limit, sell-limit, buy-ioc, sell-ioc, buy-limit-maker, sell-limit-maker（说明见下文）, buy-stop-limit, sell-stop-limit
+        :param amount: 订单交易量（市价买单此字段为订单交易额）
+        :param price: limit order的交易价格
+        :param source: 止盈止损订单触发价格
+        :param stop_price: 止盈止损订单触发价格
+        :param operator: 止盈止损订单触发价运算符 gte – greater than and equal (>=), lte – less than and equal (<=)
+        :return:
+        """
+        path = "/v1/order/orders/place"
+
+        body = {'account-id': account_id,
+                'symbol': symbol,
+                'type':  type,
+                'amount': str(amount),
+                'source': source
+                }
+
+        if price:
+            body['price'] = str(price)
+
+        if stop_price:
+            body['stop-price'] = str(stop_price)
+
+        if operator:
+            body['operator'] = operator
+
+        sign_data = self._sign('POST', path)
+
+        url = self.host + path + '?' + self._build_params(sign_data)
+        print(url)
+        print(json.dumps(sign_data))  # ''
+        # exit()
+
+        headers = {"Content-Type": "application/json"}
+        json_data = requests.post(url, headers=headers, data=json.dumps(body), timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['data']
+        raise Exception(f"请求{url}发生错误...{json_data}")
+
+        # return self._request(RequestMethod.POST, path, body=body, verify=True)
+
+    def cancel_order(self, order_id):
+        path = f'/v1/order/orders/{order_id}/submitcancel'
+
+        url = self.host + path
+        sign_data = self._sign('POST', path)
+        url += '?' + self._build_params(sign_data)
+        headers = {"Content-Type": "application/json"}
+        json_data = requests.post(url, headers=headers, timeout=self.timeout).json()
+        print(json_data)
+        if json_data['status'] == 'ok':
+            return json_data['data']
+        else:
+            return json_data
+
+        # return self._request(RequestMethod.POST, path, verify=True)
+
+    def get_open_orders(self, account_id, symbol, side=None, from_=None, direct=None, size=100):
+        """
+
+        :param account_id:
+        :param symbol:
+        :param side:
+        :param from_: 查询起始 ID
+        :param direct: 如字段'from'已设定，此字段'direct'为必填) 查询方向 (prev - 以起始ID升序检索；next - 以起始ID降序检索)
+        :param size:
+        :return:
+        """
+
+        path = '/v1/order/openOrders'
+        params = {'account-id': account_id,
+                  "symbol": symbol,
+                  "size": size}
+        if side:
+            params["side"] = side
+
+        if from_ and direct:
+            params['from'] = from_
+            params['direct'] = direct
+
+
+        sign_data = self._sign('GET', path, params=params)
+
+        url = self.host + path + '?' + self._build_params(sign_data)
+        # print(url)
+        # exit()
+        json_data = requests.get(url, timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['data']
+        raise Exception(f'请求{url}发生错误..{json_data}')
+
+        # return self._request(RequestMethod.GET, path, params=params, verify=True)
+
+
+
+    def cancel_orders(self, account_id, symbol=None, side=None, size=None):
+        path = "/v1/order/orders/batchCancelOpenOrders"
+
+        body = {'account-id': account_id}
+
+        if symbol:
+            body['symbol'] = symbol
+
+        if side:
+            body['side'] = side
+
+        if size:
+            body['size'] = size
+
+        url = self.host + path
+
+        sign_data = self._sign('POST', path)
+        url += '?' + self._build_params(sign_data)
+        headers = {"Content-Type": "application/json"}
+        json_data = requests.post(url, headers=headers, data=json.dumps(body), timeout=self.timeout).json()
+        if json_data['status'] == 'ok':
+            return json_data['data']
+        else:
+            return json_data
+        raise Exception(f"请求{url}的数据发生错误, 错误信息--> {json_data}")
+
+        # return self._request(RequestMethod.POST, path, body=body, verify=True)
+
+    def cancel_orders_by_ids(self, ids:list):
+        path = '/v1/order/orders/batchcancel'
+        body = {'order-ids': ids}
+
+        url = self.host + path
+        sign_data = self._sign('POST', path)
+        url += '?' + self._build_params(sign_data)
+        headers = {"Content-Type": "application/json"}
+        json_data = requests.post(url, headers=headers, data=json.dumps(body), timeout=self.timeout).json()
+        print(json_data)
+        if json_data['status'] == 'ok':
+            return json_data['data']
+        else:
+            return json_data
+
+        # return self._request(RequestMethod.POST, path, body=body, verify=True)
+
+    def get_order_details(self, order_id):
+        path = f'/v1/order/orders/{order_id}'
+
+        sign_data = self._sign('GET', path)
+        url = self.host + path + '?' + self._build_params(sign_data)
+
+        json_data = requests.get(url, timeout=self.timeout).json()
+        print(json_data)
+        if json_data['status'] == 'ok':
+            return json_data['data']
+
+        raise Exception(f'请求{url}发生错误..{json_data}')
+
+        # return self._request(RequestMethod.GET, path, verify=True)
 
 
 if __name__ == '__main__':
 
-    key = "xxx"
-    secret = 'xxx'
-    huobi = HuobiFutureHttp(key=key, secret=secret)
+    key = "17"
+    secret = "0ef3"
+    huobi = HuobiHttpClient(key=key, secret=secret)
 
-    data = huobi.get_kline('btcusdt', "1min", limit=200)
+    data = huobi.get_kline_data(symbol="btcusdt", period=HuobiPeriod.MINUTE_1, size=200)
     print(data)
-    print(isinstance(data, list))
+
+    # data = huobi.get_symbols()
+    # print(data)
+    # data = huobi.get_currencys()
+    # print(data)
+
+    # data = huobi.get_time_stamp()
+    # print(data)
+    #
+    # print(datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"))
+
+    # data = huobi.get_kline_data("btcusdt", HuobiPeriod.MINUTE_1, size=20)
+    # print(data)
+
+    # data = huobi.get_tickers()
+    # print(data)
+
+    # data = huobi.get_accounts()
+    # print(data)
+
+
+    # balance = huobi.get_account_balance('897261')
+    # print(balance)
+
+    # order_id = huobi.place_order('897261', 'btcusdt', 'buy-limit', '0.01', '7500')
+    # print(order_id)
+
+
+    # order_id = huobi.place_order('897261', 'btcusdt', 'buy-limit', '0.01', '7500')
+    # print(order_id)
+    # exit()
+    # import time
+    # time.sleep(3)
+    # order_id = '50813087667'
+    # huobi.cancel_order(order_id)
+
+    # orders = huobi.get_open_orders('897261', 'btcusdt')
+    # print(orders)
+
+    # data = huobi.cancel_orders('897261')
+    # print(data)
+
+
+    # data = huobi.cancel_orders_by_ids(['50814410681'])
+    # print(data)
+
+
+    # order_detail = huobi.get_order_details('50814441441')
+    # print(order_detail)
