@@ -315,6 +315,19 @@ class HuobiRequest:
         success, error = await self.request("POST", uri, body=body, auth=True)
         return success, error
 
+    async def get_merged(self, contract_type, ):
+        """
+        获取k先数据
+        :param contract_type:如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        :return:
+        """
+        uri = "/market/detail/merged"
+        params = {
+            "symbol": contract_type,
+        }
+        success, error = await self.request("GET", uri, params=params)
+        return success, error
+
     async def request(self, method, uri, params=None, body=None, headers=None, auth=False):
         """ Do HTTP request.
 

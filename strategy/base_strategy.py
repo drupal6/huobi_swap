@@ -48,6 +48,7 @@ class BaseStrategy:
         self.price_offset = config.markets.get("price_offset")
         self.loop_interval = config.markets.get("loop_interval")
         self.order_cancel_time = config.markets.get("order_cancel_time")
+        self.trading_curb = config.markets.get("trading_curb")
 
         e = None
         if not self.host:
@@ -88,6 +89,8 @@ class BaseStrategy:
             e = Error("loop_interval miss")
         if not self.order_cancel_time:
             e = Error("order_cancel_time miss")
+        if not self.trading_curb:
+            e = Error("trading_curb miss")
 
         if e:
             logger.error(e, caller=self)
@@ -196,7 +199,7 @@ class BaseStrategy:
         p = {
             "lever_rate": self.lever_rate
         }
-        if self.long_status == 1:  # 开多
+        if self.long_status == 1 and self.trading_curb != "long":  # 开多
             if self.long_trade_size > position.long_quantity:   # 开多加仓
                 amount = self.long_trade_size - position.long_quantity
                 if amount >= self.min_volume:
@@ -236,7 +239,7 @@ class BaseStrategy:
                                                   action="BUY",
                                                   price=price, quantity=-amount, kwargs=p)
 
-        if self.long_status == -1:  # 平多
+        if self.long_status == -1 and self.trading_curb != "short":  # 平多
             if position.long_quantity > 0:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
