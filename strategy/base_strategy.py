@@ -199,7 +199,7 @@ class BaseStrategy:
         p = {
             "lever_rate": self.lever_rate
         }
-        if self.long_status == 1 and self.trading_curb != "long":  # 开多
+        if self.long_status == 1 and self.trading_curb != "short":  # 开多
             if self.long_trade_size > position.long_quantity:   # 开多加仓
                 amount = self.long_trade_size - position.long_quantity
                 if amount >= self.min_volume:
@@ -219,7 +219,7 @@ class BaseStrategy:
                                                   action="SELL",
                                                   price=price, quantity=amount, kwargs=p)
 
-        if self.short_status == 1:  # 开空
+        if self.short_status == 1 and self.trading_curb != "long":  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
                 amount = self.short_trade_size - position.short_quantity
                 if amount >= self.min_volume:
@@ -239,7 +239,7 @@ class BaseStrategy:
                                                   action="BUY",
                                                   price=price, quantity=-amount, kwargs=p)
 
-        if self.long_status == -1 and self.trading_curb != "short":  # 平多
+        if self.long_status == -1:  # 平多
             if position.long_quantity > 0:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
