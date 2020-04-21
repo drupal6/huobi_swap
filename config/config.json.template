@@ -28,6 +28,7 @@
         "price_tick": 0.01,
         "loop_interval": 5,
         "price_offset": 0.0003,
-        "order_cancel_time": 30000
+        "order_cancel_time": 30000,
+        "trading_curb": "none"
     }
 }
