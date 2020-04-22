@@ -47,8 +47,10 @@ class QuantificationStrategy(BaseStrategy):
             current_bar = df.iloc[-1]
             atr = current_bar["atr"]
             if current_bar["close"] * self.atr_per / self.lever_rate > atr:  # 网格高度达不到最小要求
+                print("atr1:", (current_bar["close"] * self.atr_per / self.lever_rate), "atr:", atr)
                 return
             num = math.floor((current_bar["max_high"] - current_bar["min_low"])/atr)
+            # print(num)
             if num < self.margin_num_limit:  # 网格太少
                 return
             self.atr = atr
@@ -96,6 +98,10 @@ class QuantificationStrategy(BaseStrategy):
                     self.position_weight_label.append(i)
 
             self.position_weight_label.append(num)
+            # print("band:", self.band)
+            # print("weight:", self.position_weight)
+            # print("label:", self.position_weight_label)
+            # print("min_index:", self.min_index, "atr:", self.atr)
             print("重置band")
 
     def calculate_signal(self):
@@ -107,6 +113,7 @@ class QuantificationStrategy(BaseStrategy):
             return
         current_bar = df.iloc[-1]
         grid = -2
+        print(current_bar["close"])
         if current_bar["close"] <= self.band[0]:
             grid = -1
         elif current_bar["close"] >= self.band[-1]:
@@ -115,30 +122,42 @@ class QuantificationStrategy(BaseStrategy):
             grid = pd.cut([current_bar["close"]], self.band, labels=self.position_weight_label)[0]
         if len(self.grids) == 0:
             self.grids.append(grid)
-        if grid == -1 and grid == len(self.band):  # 平仓
+        if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空
+            print("平grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                  " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:", current_bar["close"])
         else:
             add_new_grid = False
             if self.grids[-1] != grid:
                 self.grids.append(grid)
                 add_new_grid = True
-            # print("grids:", self.grids, "grid:", grid,  "longPosition:", position.long_quantity,
-            #       " shortPosition:", position.short_quantity, "w:", self.position_weight)
             if len(self.grids) == 1:  # 补仓
                 if self.trading_curb == "long":  # 开多仓
                     self.long_status = 1
                     self.long_trade_size = self.position_weight[grid]
+                    print("补多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                          " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                          current_bar["close"])
                 elif self.trading_curb == "short":  # 开空仓
                     self.short_status = 1
                     self.short_trade_size = self.position_weight[grid]
+                    print("补空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                          " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                          current_bar["close"])
                 else:
                     if grid < self.min_index:  # 在基准线下方做多
                         self.long_status = 1
                         self.long_trade_size = self.position_weight[grid]
+                        print("补多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                              " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                              current_bar["close"])
                     else:  # 基准线上方做空
                         self.short_status = 1
                         self.short_trade_size = self.position_weight[grid]
+                        print("补空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                              " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                              current_bar["close"])
                 return
 
             if add_new_grid and self.grids[-2] < self.grids[-1]:  # 向上
@@ -148,40 +167,64 @@ class QuantificationStrategy(BaseStrategy):
                     if position.long_quantity > self.position_weight[grid]:
                         self.long_status = 1
                         self.long_trade_size = self.position_weight[grid]
+                        print("平多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                              " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                              current_bar["close"])
                 elif self.trading_curb == "short":  # 加空仓
                     self.short_status = 1
                     self.short_trade_size = self.position_weight[grid]
+                    print("加空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                          " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                          current_bar["close"])
                 else:
-                    if grid < self.min_index: # 平多仓
+                    if grid < self.min_index:  # 平多仓
                         if grid > 0:
                             grid = grid - 1
                         if position.long_quantity > self.position_weight[grid]:
                             self.long_status = 1
                             self.long_trade_size = self.position_weight[grid]
+                            print("平多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                                  " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                                  current_bar["close"])
                     if grid > self.min_index:  # 加空仓
                         self.short_status = 1
                         self.short_trade_size = self.position_weight[grid]
+                        print("加空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                              " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                              current_bar["close"])
 
             if add_new_grid and self.grids[-2] > self.grids[-1]:  # 向下
                 if self.trading_curb == "long":  # 加多仓
                     self.long_status = 1
                     self.long_trade_size = self.position_weight[grid]
+                    print("加多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                          " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                          current_bar["close"])
                 elif self.trading_curb == "short":  # 平空仓
                     if grid < len(self.band - 2):
                         grid = grid + 1
                     if position.short_quantity > self.position_weight[grid]:
                         self.short_status = 1
                         self.short_trade_size = self.position_weight[grid]
+                        print("平空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                              " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                              current_bar["close"])
                 else:
                     if grid < self.min_index:  # 加多仓
                         self.long_status = 1
                         self.long_trade_size = self.position_weight[grid]
+                        print("加多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                              " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                              current_bar["close"])
                     if grid > self.min_index:  # 平空仓
                         if grid < len(self.band - 2):
                             grid = grid + 1
                         if position.short_quantity > self.position_weight[grid]:
                             self.short_status = 1
                             self.short_trade_size = self.position_weight[grid]
+                            print("平空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+                                  " shortPosition:", position.short_quantity, "w:", self.position_weight, "close:",
+                                  current_bar["close"])
 
 
 
