@@ -19,9 +19,9 @@ class DepthSub(BaseSub):
         self._step = step
         self._depths = depths
         self._depth_size = depth_size
-        self._depths_max_szie = depths_max_size
+        self._depths_max_size = depths_max_size
         self._ch = "market.{s}.depth.{d}".format(s=self._symbol.upper(), d=self._step)
-        self._depths[self._ch] = deque(maxlen=self._depths_max_szie)
+        self._depths[self._ch] = deque(maxlen=self._depths_max_size)
 
     def ch(self):
         return self._ch
