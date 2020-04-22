@@ -123,8 +123,8 @@ class QuantificationStrategy(BaseStrategy):
             if self.grids[-1] != grid:
                 self.grids.append(grid)
                 add_new_grid = True
-            print("grids:", self.grids, "grid:", grid,  "longPosition:", position.long_quantity,
-                  " shortPosition:", position.short_quantity, "w:", self.position_weight)
+            # print("grids:", self.grids, "grid:", grid,  "longPosition:", position.long_quantity,
+            #       " shortPosition:", position.short_quantity, "w:", self.position_weight)
             if len(self.grids) == 1:  # 补仓
                 if self.trading_curb == "long":  # 开多仓
                     self.long_status = 1
