@@ -6,7 +6,7 @@ if __name__ == '__main__':
     request = HuobiRequest("https://api.btcgateway.pro", "xxxxxx", "xxxxxx")
 
     async def get_data():
-        success, error = await request.get_klines(symbol="EOS", contract_type="this_week", contract_code="")
+        success, error = await request.get_delivery_info(symbol="EOS", contract_type="quarter", contract_code="")
         print(success)
         print(error)
 

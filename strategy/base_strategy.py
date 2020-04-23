@@ -106,7 +106,7 @@ class BaseStrategy:
         self.orders = {}
         self.position = Position(self.symbol + '/' + self.trade_symbol)
 
-        self.test = True
+        self.test = False
         self.trade_money = 1  # 10USDT.  每次交易的金额, 修改成自己下单的金额.
         self.min_volume = 1  # 最小的交易数量(张).
         self.short_trade_size = 0
@@ -183,6 +183,10 @@ class BaseStrategy:
         下单或者平仓
         :return:
         """
+        orders = copy.copy(self.orders)
+        if len(orders) > 0:
+            return
+
         # 判断装填和数量是否相等
         if self.long_status == 0 and self.short_status == 0:
             return
@@ -195,6 +199,7 @@ class BaseStrategy:
         trades = copy.copy(self.trades)
         last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
         if last_trades and len(last_trades) > 0:
+            print("last_trades[-1].price:", last_trades[-1].price)
             self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
         if self.last_price <= 0:
             return
