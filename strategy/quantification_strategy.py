@@ -115,7 +115,7 @@ class QuantificationStrategy(BaseStrategy):
             grid = pd.cut([current_bar["close"]], self.band, labels=self.position_weight_label)[0]
         if len(self.grids) == 0:
             self.grids.append(grid)
-        if grid == -1 and grid == len(self.band):  # 平仓
+        if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空
         else:
