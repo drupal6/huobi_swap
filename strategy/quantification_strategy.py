@@ -73,20 +73,20 @@ class QuantificationStrategy(BaseStrategy):
             if self.trading_curb == "long":  # 做多的情况 计算网格仓位
                 for i in range(0, num):
                     if i == 0:
-                        self.position_weight.append(num - 1)
+                        self.position_weight.append((num - 1) * self.position_weight_rate)
                     if i == num - 1:
                         self.position_weight.append(0)
                     else:
-                        self.position_weight.append(num - i - 1)
+                        self.position_weight.append((num - i - 1) * self.position_weight_rate)
                     self.position_weight_label.append(i)
             elif self.trading_curb == "short":  # 做空的情况 计算网格仓位
                 for i in range(0, num):
                     if i == 0:
                         self.position_weight.append(0)
                     if i == num - 1:
-                        self.position_weight.append(num - 1)
+                        self.position_weight.append((num - 1) * self.position_weight_rate)
                     else:
-                        self.position_weight.append(i + 1)
+                        self.position_weight.append((i + 1) * self.position_weight_rate)
                     self.position_weight_label.append(i)
             else:  # 向上做空向下做多的情况 计算网格仓位
                 for i in range(0, num):
@@ -97,18 +97,18 @@ class QuantificationStrategy(BaseStrategy):
                         index = 1
                     elif i == num - 1:
                         index = num - 2
-                    self.position_weight.append(abs(self.min_index - index))
+                    self.position_weight.append(abs(self.min_index - index) * self.position_weight_rate)
                     self.position_weight_label.append(i)
 
             self.position_weight_label.append(num)
-            # print("std:", std)
-            # print("price_margin:", self.price_margin)
-            # print("atr:", self.atr)
-            # print("band:", self.band)
-            # print("weight:", self.position_weight)
-            # print("label:", self.position_weight_label)
-            # print("min_index:", self.min_index, "atr:", self.atr)
-            # print("重置band")
+            print("std:", std)
+            print("price_margin:", self.price_margin)
+            print("atr:", self.atr)
+            print("band:", self.band)
+            print("weight:", self.position_weight)
+            print("label:", self.position_weight_label)
+            print("min_index:", self.min_index, "atr:", self.atr)
+            print("重置band")
 
     def calculate_signal(self):
         klines = copy.copy(self.klines)
