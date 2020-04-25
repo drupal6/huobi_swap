@@ -10,7 +10,8 @@ class DepthSub(BaseSub):
 
     def __init__(self, symbol, step, depths, depth_size=10, depths_max_size=200):
         """
-        symbol:如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        symbol:交割合约如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        symbol:永久合约如"BTC_USD"...
         step：获得150档深度数据，使用step0, step1, step2, step3, step4, step5（step1至step5是进行了深度合并后的深度），
         使用step0时，不合并深度获取150档数据;获得20档深度数据，使用 step6, step7, step8, step9, step10, step11（step7
         至step11是进行了深度合并后的深度），使用step6时，不合并深度获取20档数据

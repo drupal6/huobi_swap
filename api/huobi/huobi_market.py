@@ -19,6 +19,8 @@ class HuobiMarket(Websocket):
 
     def __init__(self, **kwargs):
         e = None
+        if not kwargs.get("platform"):
+            e = Error("platform miss")
         if not kwargs.get("connected_callback"):
             e = Error("connected_callback miss")
         if not kwargs.get("process_binary"):
@@ -26,11 +28,14 @@ class HuobiMarket(Websocket):
         if e:
             logger.error(e, caller=self)
             return
-
+        self._platform = kwargs.get("platform")
         self._wss = kwargs.get("wss", "wss://www.hbdm.com")
         self._connected_callback = kwargs.get("connected_callback")
         self._process_binary = kwargs.get("process_binary")
-        url = self._wss + "/ws"
+        if self._platform == "swap":
+            url = self._wss + "/swap-ws"
+        else:
+            url = self._wss + "/ws"
         super(HuobiMarket, self).__init__(url, send_hb_interval=5)
         self.initialize()
 

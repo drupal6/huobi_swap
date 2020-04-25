@@ -11,7 +11,8 @@ class TradeSub(BaseSub):
 
     def __init__(self, symbol, trades, trades_max_size=200):
         """
-        symbol:如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        symbol:交割合约如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        symbol:永久合约如"BTC_USD"
         """
         self._symbol = symbol
         self._trades = trades

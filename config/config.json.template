@@ -15,6 +15,7 @@
         "secret_key": "xxxxxx"
     },
     "MARKETS": {
+        "platform": "swap",
         "strategy": "BollStrategy",
         "klines_max_size": 200,
         "depths_max_size": 100,
@@ -29,6 +30,7 @@
         "loop_interval": 5,
         "price_offset": 0.0003,
         "order_cancel_time": 30000,
-        "trading_curb": "none"
+        "trading_curb": "none",
+        "position_weight_rate": 2
     }
 }

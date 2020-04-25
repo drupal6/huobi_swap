@@ -1,12 +1,11 @@
-from api.huobi.huobi_request import HuobiRequest
+from api.huobi.huobi_request_swap import HuobiSwapRequest
 import asyncio
-from utils.tools import round_to
 
 if __name__ == '__main__':
-    request = HuobiRequest("https://api.btcgateway.pro", "xxxxxx", "xxxxxx")
+    request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
 
     async def get_data():
-        success, error = await request.get_delivery_info(symbol="EOS", contract_type="quarter", contract_code="")
+        success, error = await request.get_info(contract_code="ETH-USD")
         print(success)
         print(error)
 

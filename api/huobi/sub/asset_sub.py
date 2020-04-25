@@ -10,7 +10,8 @@ class AssetSub(BaseSub):
 
     def __init__(self, symbol, asset):
         """
-        symbol:btc、bch
+        交割合约symbol:btc、bch
+        永久合约合约symbol:BTC-USD
         """
         self._symbol = symbol
         self._asset = asset

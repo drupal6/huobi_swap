@@ -38,6 +38,8 @@ class HuobiTrade(Websocket):
         e = None
         if not kwargs.get("wss"):
             kwargs["wss"] = "wss://api.hbdm.com"
+        if not kwargs.get("platform"):
+            e = Error("param platform miss")
         if not kwargs.get("access_key"):
             e = Error("param access_key miss")
         if not kwargs.get("secret_key"):
@@ -48,11 +50,15 @@ class HuobiTrade(Websocket):
             logger.error(e, caller=self)
             return
 
+        self._platform = kwargs.get("platform")
         self._wss = kwargs.get("wss")
         self._access_key = kwargs.get("access_key")
         self._secret_key = kwargs.get("secret_key")
         self._process_binary = kwargs.get("process_binary")
-        url = self._wss + "/notification"
+        if self._platform == "swap":
+            url = self._wss + "/swap-notification"
+        else:
+            url = self._wss + "/notification"
         super(HuobiTrade, self).__init__(url, send_hb_interval=5)
         self.initialize()
 
@@ -80,7 +86,10 @@ class HuobiTrade(Websocket):
             "SignatureVersion": "2",
             "Timestamp": timestamp
         }
-        sign = self.generate_signature("GET", data, "/notification")
+        if self._platform == "swap":
+            sign = self.generate_signature("GET", data, "/swap-notification")
+        else:
+            sign = self.generate_signature("GET", data, "/notification")
         data["op"] = "auth"
         data["type"] = "api"
         data["Signature"] = sign

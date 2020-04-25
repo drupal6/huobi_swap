@@ -8,7 +8,8 @@ class Market:
     """
     市场对象
     """
-    def __init__(self, wss=None, request: HuobiRequest = None):
+    def __init__(self, platform="", wss=None, request: HuobiRequest = None):
+        self._platform = platform
         self._wss = wss
         self._request = request
         self._channel_sub = {}
@@ -16,6 +17,7 @@ class Market:
 
     def start(self):
         mm = {
+            "platform": self._platform,
             "wss": self._wss,
             "connected_callback": self.connected_callback,
             "process_binary": self.process_binary

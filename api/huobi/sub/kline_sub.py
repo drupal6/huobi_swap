@@ -11,6 +11,7 @@ class KlineSub(BaseSub):
     def __init__(self, symbol, period, klines, klines_max_size=200):
         """
         symbol:如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        symbol:如"BTC_USD"...
         period:1min, 5min, 15min, 30min, 60min,4hour,1day,1week, 1mon
         """
         self._symbol = symbol

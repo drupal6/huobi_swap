@@ -8,15 +8,21 @@ class PositonSub(BaseSub):
     持仓订阅
     """
 
-    def __init__(self, symbol, contract_type, position):
+    def __init__(self, platform, symbol, contract_type, position):
         """
-        symbol:btc、bch
+        symbol:交割合约btc、bch
         contract_type当周:"this_week", 次周:"next_week", 季度:"quarter"
+        symbol:永续合约BTC
+        contract_type续合约:"BTC-USD"
         """
+        self._platform = platform
         self._symbol = symbol
         self._position = position
         self._contract_type = contract_type
-        self._ch = "positions.{symbol}".format(symbol=self._symbol)
+        if self._platform == "swap":
+            self._ch = "positions.{symbol}".format(symbol=self._contract_type)
+        else:
+            self._ch = "positions.{symbol}".format(symbol=self._symbol)
 
     def ch(self):
         return self._ch
@@ -33,12 +39,18 @@ class PositonSub(BaseSub):
         return data
 
     async def call_back(self, topic, data):
+        print("position:")
+        print(data)
         for position_info in data["data"]:
             print(position_info)
             if position_info["symbol"] != self._symbol.upper():
                 continue
-            if position_info["contract_type"] != self._contract_type:
-                continue
+            if self._platform == "swap":
+                if position_info["contract_code"] != self._contract_type:
+                    return
+            else:
+                if position_info["contract_type"] != self._contract_type:
+                    return
             if position_info["direction"] == "buy":
                 self._position.long_quantity = int(position_info["volume"])
                 self._position.long_avg_price = position_info["cost_hold"]

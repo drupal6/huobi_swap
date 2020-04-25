@@ -29,8 +29,9 @@ from api.model.order import ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_MAKE
 
 class Trade:
 
-    def __init__(self, wss=None, access_key=None, secret_key=None, rest_api=None):
+    def __init__(self, platform="", wss=None, access_key=None, secret_key=None, rest_api=None):
         """initialize trade object."""
+        self._platform = platform
         self._rest_api = rest_api
         self._wss = wss
         self._access_key = access_key
@@ -40,6 +41,7 @@ class Trade:
 
     def start(self):
         tt = {
+            "platform": self._platform,
             "wss": self._wss,
             "access_key": self._access_key,
             "secret_key": self._secret_key,
@@ -113,7 +115,8 @@ class Trade:
     async def create_order(self, symbol, contract_type, action, price, quantity, order_type=ORDER_TYPE_LIMIT, **kwargs):
         """ Create an order.
         Args:
-            symbol:"BTC","ETH"...
+            symbol:交割合约"BTC","ETH"...
+            symbol:永久合约"BTC-USD"...
             contract_type:合约类型 ("this_week":当周 "next_week":下周 "quarter":季度)
             action: Trade direction, `BUY` or `SELL`.
             price: Price of each contract.
@@ -161,10 +164,15 @@ class Trade:
             return None, "order type error"
 
         quantity = abs(int(quantity))
-        result, error = await self._rest_api.create_order(symbol=symbol, contract_type=contract_type,
-                                                          contract_code="", volume=quantity, direction=direction,
-                                                          offset=offset, lever_rate=lever_rate,
-                                                          order_price_type=order_price_type, price=price)
+        if self._platform == "swap":
+            result, error = await self._rest_api.create_order(contract_code=symbol, quantity=quantity,
+                                                              direction=direction, offset=offset, lever_rate=lever_rate,
+                                                              order_price_type=order_price_type, price=price)
+        else:
+            result, error = await self._rest_api.create_order(symbol=symbol, contract_type=contract_type,
+                                                              contract_code="", volume=quantity, direction=direction,
+                                                              offset=offset, lever_rate=lever_rate,
+                                                              order_price_type=order_price_type, price=price)
         if error:
             logger.error("create_order error! error:", error, caller=self)
             return None, error
@@ -231,7 +239,8 @@ class Trade:
     async def revoke_order(self, symbol, contract_type, *order_nos):
         """ Revoke (an) order(s).
         Args:
-            symbol:"BTC","ETH"...
+             symbol:交割合约"BTC","ETH"...
+             symbol:永久合约"BTC-USD"...
             contract_type:合约类型 ("this_week":当周 "next_week":下周 "quarter":季度)
             order_nos: Order id list, you can set this param to 0 or multiple items. If you set 0 param, you can cancel
                 all orders for this symbol(initialized in Trade object). If you set 1 param, you can cancel an order.
@@ -243,7 +252,10 @@ class Trade:
         """
         # If len(order_nos) == 0, you will cancel all orders for this symbol(initialized in Trade object).
         if len(order_nos) == 0:
-            success, error = await self._rest_api.revoke_order_all(symbol, '', contract_type)
+            if self._platform == "swap":
+                success, error = await self._rest_api.revoke_order_all(symbol)
+            else:
+                success, error = await self._rest_api.revoke_order_all(symbol, '', contract_type)
             if error:
                 return False, error
             if success.get("errors"):
