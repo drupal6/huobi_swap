@@ -38,8 +38,9 @@ class InitPositonSub(BaseSub):
                 if position_info["contract_code"] != self._contract_type:
                     return
             else:
-                if position_info["contract_type"] != self._contract_type:
-                    return
+                pass
+                # if position_info["contract_type"] != self._contract_type:
+                #     return
             if position_info["direction"] == "buy":
                 self._position.long_quantity = int(position_info["volume"])
                 self._position.long_avg_price = position_info["cost_hold"]

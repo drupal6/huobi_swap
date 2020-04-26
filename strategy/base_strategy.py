@@ -123,7 +123,7 @@ class BaseStrategy:
         self.orders = {}
         self.position = Position(self.symbol + '/' + self.trade_symbol)
 
-        self.test = True
+        self.test = False
         self.trade_money = 1  # 10USDT.  每次交易的金额, 修改成自己下单的金额.
         self.min_volume = 1  # 最小的交易数量(张).
         self.short_trade_size = 0
