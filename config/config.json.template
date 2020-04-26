@@ -7,6 +7,10 @@
         "clear": false,
         "backup_count": 5
     },
+    "DINGDING": {
+        "secret": "xxxx",
+        "access_token": "xxxxx"
+    },
     "ACCOUNTS": {
         "host": "https://api.btcgateway.pro",
         "mark_wss": "wss://www.btcgateway.pro",

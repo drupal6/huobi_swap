@@ -1,6 +1,7 @@
 from api.huobi.sub.base_sub import BaseSub
 from utils import logger
 from utils import tools
+from utils.dingding_msg_util import MsgUtil
 from api.model.order import Order
 from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
 from api.model.order import TRADE_TYPE_BUY_CLOSE, TRADE_TYPE_BUY_OPEN, TRADE_TYPE_SELL_CLOSE, TRADE_TYPE_SELL_OPEN
@@ -98,5 +99,5 @@ class OrderSub(BaseSub):
             self._orders.pop(order_no)
 
         # publish order
+        MsgUtil.order_msg(order_info)
         logger.info("symbol:", order.symbol, "order:", order, caller=self)
-

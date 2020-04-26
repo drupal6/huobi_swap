@@ -15,6 +15,7 @@ import hmac
 import hashlib
 import base64
 import urllib.parse
+from utils.config import config
 
 
 class RequestMethod(Enum):
@@ -29,7 +30,7 @@ class DingTalk:
     BASE_URL = "https://oapi.dingtalk.com/robot/send?access_token=%s&timestamp=%s&sign=%s"
 
     @classmethod
-    def send_text_msg(cls, access_token, content, phones=None, is_at_all=False):
+    def send_text_msg(cls, content, phones=None, is_at_all=False):
         """ Send text message.
 
         Args:
@@ -38,6 +39,7 @@ class DingTalk:
             phones: Phone numbers to be @.
             is_at_all: Is @ all members? default is False.
         """
+        content = "msg:" + content
         body = {
             "msgtype": "text",
             "text": {
@@ -50,9 +52,9 @@ class DingTalk:
             assert isinstance(phones, list)
             body["at"] = {"atMobiles": phones}
         timestamp, sign = cls._sign()
+        access_token = config.dingding.get("access_token")
         url = cls.BASE_URL % (access_token, timestamp, sign)
-        print(url)
-        print(cls._request(url=url, method=RequestMethod.POST, body=body))
+        cls._request(url=url, method=RequestMethod.POST, body=body)
 
     @classmethod
     def send_markdown_msg(cls, access_token, title, text, phones=None, is_at_all=False):
@@ -65,6 +67,7 @@ class DingTalk:
             phones: Phone numbers to be @.
             is_at_all: Is @ all members? default is False.
         """
+        text = "msg:" + text
         body = {
             "msgtype": "markdown",
             "markdown": {
@@ -95,7 +98,7 @@ class DingTalk:
     @classmethod
     def _sign(cls):
         timestamp = str(round(time.time() * 1000))
-        secret = 'xxxx'
+        secret = config.dingding.get("secret")
         secret_enc = secret.encode('utf-8')
         string_to_sign = '{}\n{}'.format(timestamp, secret)
         string_to_sign_enc = string_to_sign.encode('utf-8')
