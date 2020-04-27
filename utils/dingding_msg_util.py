@@ -31,8 +31,6 @@ class MsgUtil:
 
         DingTalk.send_text_msg(content=msg)
 
-
-
     @classmethod
     def get_status(cls, status):
         if status == 4:
@@ -41,4 +39,6 @@ class MsgUtil:
             return "部分成交已撤单"
         elif status == 6:
             return "全部成交"
+        else:
+            return status
 

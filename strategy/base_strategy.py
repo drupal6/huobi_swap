@@ -44,6 +44,7 @@ class BaseStrategy:
         self.wss = config.accounts.get("trade_wss")
         self.access_key = config.accounts.get("access_key")
         self.secret_key = config.accounts.get("secret_key")
+        self.test = config.accounts.get("is_test", True)
 
         self.klines_max_size = config.markets.get("klines_max_size")
         self.depths_max_size = config.markets.get("depths_max_size")
@@ -123,7 +124,6 @@ class BaseStrategy:
         self.orders = {}
         self.position = Position(self.symbol + '/' + self.trade_symbol)
 
-        self.test = False
         self.trade_money = 1  # 10USDT.  每次交易的金额, 修改成自己下单的金额.
         self.min_volume = 1  # 最小的交易数量(张).
         self.short_trade_size = 0

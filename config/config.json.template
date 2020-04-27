@@ -16,7 +16,8 @@
         "mark_wss": "wss://www.btcgateway.pro",
         "trade_wss": "wss://api.btcgateway.pro",
         "access_key": "xxxxxx",
-        "secret_key": "xxxxxx"
+        "secret_key": "xxxxxx",
+        "is_test": true
     },
     "MARKETS": {
         "platform": "swap",
