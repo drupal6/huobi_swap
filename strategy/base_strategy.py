@@ -61,7 +61,8 @@ class BaseStrategy:
         self.loop_interval = config.markets.get("loop_interval")
         self.order_cancel_time = config.markets.get("order_cancel_time")
         self.trading_curb = config.markets.get("trading_curb")
-        self.position_weight_rate = config.markets.get("position_weight_rate")
+        self.long_position_weight_rate = config.markets.get("long_position_weight_rate")
+        self.short_position_weight_rate = config.markets.get("short_position_weight_rate")
         self.platform = config.markets.get("platform")
 
         e = None
@@ -107,8 +108,10 @@ class BaseStrategy:
             e = Error("order_cancel_time miss")
         if not self.trading_curb:
             e = Error("trading_curb miss")
-        if not self.position_weight_rate:
-            e = Error("position_weight_rate")
+        if not self.long_position_weight_rate:
+            e = Error("long_position_weight_rate miss")
+        if not self.short_position_weight_rate:
+            e = Error("short_position_weight_rate miss")
 
         if e:
             logger.error(e, caller=self)

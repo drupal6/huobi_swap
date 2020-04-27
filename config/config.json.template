@@ -17,25 +17,26 @@
         "trade_wss": "wss://api.btcgateway.pro",
         "access_key": "xxxxxx",
         "secret_key": "xxxxxx",
-        "is_test": true
+        "is_test": true  # 是否是测试 true是 false不是
     },
     "MARKETS": {
-        "platform": "swap",
-        "strategy": "BollStrategy",
-        "klines_max_size": 200,
-        "depths_max_size": 100,
-        "trades_max_size": 100,
-        "symbol": "eth",
-        "mark_symbol": "ETH_CW",
-        "trade_symbol": "quarter",
-        "period": "1min",
-        "step": "step6",
-        "lever_rate": 20,
-        "price_tick": 0.01,
-        "loop_interval": 5,
-        "price_offset": 0.0003,
-        "order_cancel_time": 30000,
-        "trading_curb": "none",
-        "position_weight_rate": 2
+        "platform": "swap",   # 火币那种合约 jiaoge交割合约 swap永续合约
+        "strategy": "BollStrategy",  # 选择那种交易策略
+        "klines_max_size": 200,  # 获取的k大小
+        "depths_max_size": 100,  # 保存深度大小
+        "trades_max_size": 100,  # 保存交易数据大小
+        "symbol": "eth",  # 交割合约小写 永续合约大写
+        "mark_symbol": "ETH_CW",  # 交割合约BTC_CW BTC_NW BTC_CQ  永续合约 BTC-USD
+        "trade_symbol": "quarter", # 交割合约this_week next_week quarter  永续合约 BTC-USD
+        "period": "1min",  # kline周期
+        "step": "step6",  # 市场深度级别
+        "lever_rate": 20,  # 倍数
+        "price_tick": 0.01,  # 价格保留小数位
+        "loop_interval": 5,  # 心跳时间
+        "price_offset": 0.0003,  # 下单盘偏差
+        "order_cancel_time": 30000,  # 挂单取消时间
+        "trading_curb": "none",  # 交易类型 long 只做多 short只做空  none多空都做
+        "long_position_weight_rate": 1,  # 做多仓位倍数
+        "short_position_weight_rate": 1  # 做空仓位倍数
     }
 }
