@@ -145,9 +145,9 @@ class QuantificationStrategy(BaseStrategy):
         if len(self.grids) == 0:
             self.grids.append(grid)
             self._save_file()
-        print("grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-              "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-              "short_weight:", self.short_position_weight, "close:", current_bar["close"])
+        # print("grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
+        #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
+        #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
         if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空

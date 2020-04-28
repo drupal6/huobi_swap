@@ -305,15 +305,15 @@ class BaseStrategy:
                 #                               price=price, quantity=-position.short_quantity, kwargs=p)
 
     async def create_order(self, action, price, quantity):
-            p = {"lever_rate": self.lever_rate}
-            if self.platform == "swap":
-                await self.trade.create_order(symbol=self.trade_symbol.upper(), contract_type=self.trade_symbol,
-                                              action=action,
-                                              price=price, quantity=quantity, kwargs=p)
-            else:
-                await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                                              action=action,
-                                              price=price, quantity=quantity, kwargs=p)
+        p = {"lever_rate": self.lever_rate}
+        if self.platform == "swap":
+            await self.trade.create_order(symbol=self.trade_symbol.upper(), contract_type=self.trade_symbol,
+                                          action=action,
+                                          price=price, quantity=quantity, kwargs=p)
+        else:
+            await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
+                                          action=action,
+                                          price=price, quantity=quantity, kwargs=p)
 
     def transaction_test(self):
         """

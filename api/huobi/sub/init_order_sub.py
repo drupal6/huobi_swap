@@ -41,9 +41,6 @@ class InitOrderSub(BaseSub):
     def ch(self):
         return "get_open_orders"
 
-    def topic(self):
-        return "get_open_orders"
-
     def symbol(self):
         return self._symbol
 

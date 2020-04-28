@@ -25,13 +25,13 @@ class OrderSub(BaseSub):
         self._symbol = symbol
         self._orders = orders
         self._contract_type = contract_type
-        self._ch = "orders.{symbol}".format(symbol=self._symbol)
+        if self._platform == "swap":
+            self._ch = "orders.{symbol}".format(symbol=self._contract_type)
+        else:
+            self._ch = "orders.{symbol}".format(symbol=self._symbol)
 
     def ch(self):
         return self._ch
-
-    def topic(self):
-        return self._ch.lower()
 
     def symbol(self):
         return self._symbol
@@ -45,6 +45,7 @@ class OrderSub(BaseSub):
         return data
 
     async def call_back(self, channel, order_info):
+        print(order_info)
         if order_info["symbol"] != self._symbol.upper():
             return
         if self._platform == "swap":

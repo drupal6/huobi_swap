@@ -8,9 +8,6 @@ class BaseSub:
     def ch(self):
         return
 
-    def topic(self):
-        return
-
     def symbol(self):
         return
 
