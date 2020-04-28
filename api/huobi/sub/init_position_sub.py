@@ -22,6 +22,9 @@ class InitPositonSub(BaseSub):
     def ch(self):
         return "positions"
 
+    def topic(self):
+        return "positions"
+
     def symbol(self):
         return self._symbol
 

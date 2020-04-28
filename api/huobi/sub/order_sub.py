@@ -30,6 +30,9 @@ class OrderSub(BaseSub):
     def ch(self):
         return self._ch
 
+    def topic(self):
+        return self._ch.lower()
+
     def symbol(self):
         return self._symbol
 

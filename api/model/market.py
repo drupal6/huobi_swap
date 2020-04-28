@@ -30,7 +30,7 @@ class Market:
         :param sub:
         :return:
         """
-        self._channel_sub[sub.ch()] = sub
+        self._channel_sub[sub.topic()] = sub
 
     async def connected_callback(self):
         print("connected_callback")
@@ -48,7 +48,8 @@ class Market:
         :param data:
         :return:
         """
-        sub = self._channel_sub.get(channel, None)
+        topic = channel.lower()
+        sub = self._channel_sub.get(topic, None)
         if sub:
             await sub.call_back(channel, data)
         else:

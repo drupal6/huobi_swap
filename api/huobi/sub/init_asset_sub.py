@@ -19,6 +19,9 @@ class InitAssetSub(BaseSub):
     def ch(self):
         return "accounts"
 
+    def topic(self):
+        return "accounts"
+
     def symbol(self):
         return self._symbol
 

@@ -50,7 +50,7 @@ class Trade:
         self._t = HuobiTrade(**tt)
 
     def add_sub(self, sub: BaseSub):
-        self._channel_sub[sub.ch()] = sub
+        self._channel_sub[sub.topic()] = sub
 
     async def auth_call_back(self, data):
         if data["err-code"] != 0:
@@ -106,10 +106,12 @@ class Trade:
             await self.sub_callback(data)
         elif op == "notify":
             topic = data["topic"]
-            sub = self._channel_sub.get(topic, None)
+            topic_lower = topic.lower()
+            sub = self._channel_sub.get(topic_lower, None)
             if sub:
                 await sub.call_back(topic, data)
             else:
+
                 logger.error("event error! topic:", topic, "data:", data, caller=self)
 
     async def create_order(self, symbol, contract_type, action, price, quantity, order_type=ORDER_TYPE_LIMIT, **kwargs):

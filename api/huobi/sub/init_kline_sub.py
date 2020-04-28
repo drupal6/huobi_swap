@@ -39,6 +39,9 @@ class InitKlineSub(BaseSub):
     def ch(self):
         return "init_klines"
 
+    def topic(self):
+        return "init_klines"
+
     def symbol(self):
         return self._symbol
 
