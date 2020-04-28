@@ -6,7 +6,7 @@ if __name__ == '__main__':
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
 
     async def get_data():
-        success, error = await request.get_klines(contract_type="BTC-USD", period="5min", size=200)
+        success, error = await request.get_info(contract_code="BTC-USD")
         print(success)
         print(error)
 

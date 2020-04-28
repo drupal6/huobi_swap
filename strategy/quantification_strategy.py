@@ -6,6 +6,7 @@ import talib
 from utils.tools import round_to
 import math
 from collections import deque
+from utils import fileutil
 
 
 class QuantificationStrategy(BaseStrategy):
@@ -14,11 +15,12 @@ class QuantificationStrategy(BaseStrategy):
     """
 
     def __init__(self):
+        self.file_path = "../file/QuantificationStrategy_%s.json"
         self.price_margin = []  # 设置网格价格
         self.long_position_weight = []  # 设置多网格的仓位
         self.short_position_weight = []  # 设置空网格的仓位
         self.position_weight_label = []  # 设置网格仓位标签
-        self.band = None  # 网格价格
+        self.band = []  # 网格价格
         self.atr = 0  # 真实波幅
         self.atr_per = 0.05   # 最小网格高度要求
         self.min_index = -1  # 网格基准先位置
@@ -26,10 +28,40 @@ class QuantificationStrategy(BaseStrategy):
         self.close_position_rate = 5  # 平仓价格倍数
         self.margin_num_limit = 4  # 最少网格要求
         super(QuantificationStrategy, self).__init__()
+        self._load_file()
+
+    def _load_file(self):
+        file_data = fileutil.load_json(self.file_path % self.mark_symbol)
+        if len(file_data) > 0:
+            self.price_margin = file_data.get("price_margin")
+            self.long_position_weight = file_data.get("long_position_weight")
+            self.short_position_weight = file_data.get("short_position_weight")
+            self.position_weight_label = file_data.get("position_weight_label")
+            self.band = file_data.get("band")
+            self.atr = file_data.get("atr")
+            self.min_index = file_data.get("min_index")
+            last_grid = file_data.get("last_grid")
+            if last_grid:
+                self.grids.append(last_grid)
+
+    def _save_file(self):
+        file_data = {
+            "price_margin": self.price_margin,
+            "long_position_weight": self.long_position_weight,
+            "short_position_weight": self.short_position_weight,
+            "position_weight_label": self.position_weight_label,
+            "band": self.band,
+            "atr": self.atr,
+            "min_index": self.min_index
+        }
+        if len(self.grids) > 0:
+            file_data["last_grid"] = int(self.grids[-1])
+        print(file_data)
+        fileutil.save_json(self.file_path % self.mark_symbol, file_data)
 
     def reset_bank(self, df):
         reset = False
-        if self.band is None:
+        if len(self.band) == 0:
             reset = True
         else:
             open_orders = copy.copy(self.orders)
@@ -69,7 +101,8 @@ class QuantificationStrategy(BaseStrategy):
                 std = 1.1
             if std > 3.5:
                 std = 3.4
-            self.band = np.mean(df['close']) + np.array(self.price_margin) * std  # 计算各个网格的价格
+            band = np.mean(df['close']) + np.array(self.price_margin) * std  # 计算各个网格的价格
+            self.band = band.tolist()
             for i in range(0, num):  # 做多的情况 计算网格仓位
                 if i == 0:
                     self.long_position_weight.append((num - 1) * self.long_position_weight_rate)
@@ -86,6 +119,7 @@ class QuantificationStrategy(BaseStrategy):
                 else:
                     self.short_position_weight.append((i + 1) * self.short_position_weight_rate)
             self.position_weight_label.append(num)
+            self._save_file()
             print("std:", std, "atr:", self.atr, "min_index:", self.min_index, "num:", num)
             print("price_margin:", self.price_margin)
             print("band:", self.band)
@@ -110,6 +144,7 @@ class QuantificationStrategy(BaseStrategy):
             grid = pd.cut([current_bar["close"]], self.band, labels=self.position_weight_label)[0]
         if len(self.grids) == 0:
             self.grids.append(grid)
+            self._save_file()
         print("grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
               "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
               "short_weight:", self.short_position_weight, "close:", current_bar["close"])
@@ -123,6 +158,7 @@ class QuantificationStrategy(BaseStrategy):
             add_new_grid = False
             if self.grids[-1] != grid:
                 self.grids.append(grid)
+                self._save_file()
                 add_new_grid = True
             if len(self.grids) == 1:  # 补仓
                 if self.trading_curb != "short":  # 开多仓
