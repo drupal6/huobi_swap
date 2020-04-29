@@ -225,9 +225,9 @@ class BaseStrategy:
         # 判断装填和数量是否相等
         if self.long_status == 0 and self.short_status == 0:
             return
-        if self.long_status == 1 and self.long_trade_size <= self.min_volume:
+        if self.long_status == 1 and self.long_trade_size < self.min_volume:
             return
-        if self.short_status == 1 and self.short_trade_size <= self.min_volume:
+        if self.short_status == 1 and self.short_trade_size < self.min_volume:
             return
 
         # 获取最近的交易价格
