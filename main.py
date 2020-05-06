@@ -15,6 +15,9 @@ def initialize():
     elif strategy == "QuantificationStrategy":
         from strategy.quantification_strategy import QuantificationStrategy
         QuantificationStrategy()
+    elif strategy == "QuantificationStrategy1":
+        from strategy.quantification_strategy1 import QuantificationStrategy1
+        QuantificationStrategy1()
     elif strategy == "IchimokuStrategy":
         from strategy.ichimoku_strategy import IchimokuStrategy
         IchimokuStrategy()
