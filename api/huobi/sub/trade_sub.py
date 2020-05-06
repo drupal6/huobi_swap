@@ -2,6 +2,7 @@ from api.huobi.sub.base_sub import BaseSub
 from api.model.markettrade import Trade
 from api.model.order import ORDER_ACTION_BUY, ORDER_ACTION_SELL
 from collections import deque
+from utils.recordutil import record
 
 
 class TradeSub(BaseSub):
@@ -51,6 +52,7 @@ class TradeSub(BaseSub):
             }
             trade = Trade(**info)
             trades.append(trade)
+            record.record_trade(symbol=symbol, tick=tick)
         trade_list = self._trades[channel]
         for trade in trades:
             trade_list.append(trade)

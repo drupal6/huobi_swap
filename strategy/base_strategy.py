@@ -21,6 +21,7 @@ from utils.config import config
 from utils import logger
 from utils.tools import round_to
 from api.model.error import Error
+from utils.recordutil import record
 
 
 class BaseStrategy:
@@ -176,6 +177,7 @@ class BaseStrategy:
         LoopRunTask.register(self.on_ticker, self.loop_interval)
 
     async def on_ticker(self, *args, **kwargs):
+        record.notice()
         await self.check_orders()
         if len(self.klines) == 0:
             return
@@ -206,7 +208,6 @@ class BaseStrategy:
         ut_time = tools.get_cur_timestamp_ms()
         if len(orders) > 0:
             for no in orders.values():
-                print(type(no.utime))
                 if ut_time >= no.ctime + self.order_cancel_time:
                     if self.platform == "swap":
                         await self.trade.revoke_order(self.trade_symbol.upper(), self.trade_symbol, no.order_no)
@@ -234,7 +235,6 @@ class BaseStrategy:
         trades = copy.copy(self.trades)
         last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
         if last_trades and len(last_trades) > 0:
-            print("last_trades[-1].price:", last_trades[-1].price)
             self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
         if self.last_price <= 0:
             return
