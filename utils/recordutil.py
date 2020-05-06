@@ -8,7 +8,7 @@ class TradeRecordNode:
         self.symbol = symbol
         self.buy = 0
         self.sell = 0
-        self.buy_price = "0"
+        self.buy_price = 0
         self.sell_price = 0
 
     def add(self, direction, quantity, price):
@@ -20,7 +20,13 @@ class TradeRecordNode:
             self.sell_price = price
 
     def __str__(self):
-        return "%s\nsymbol:%s\nbuy:%s\nbuy price:%s\nsell:%s\nsell price:%s" % (self.t, self.symbol, ("%.8f" % self.buy), self.buy_price, ("%.8f" % self.sell), self.sell_price)
+        t = tools.get_cur_datetime_m(fmt='%Y-%m-%d %H:%M:%S')
+        symbol = self.symbol
+        buy = "%.8f" % self.buy
+        buy_price = "%.8f" % self.buy_price
+        sell = "%.8f" % self.sell
+        sell_price = "%.8f" % self.sell_price
+        return "%s\nsymbol:%s\nbuy:%s\nsell:%s\nbuy price:%s\nsell price:%s" % (t, symbol, buy, sell, buy_price, sell_price)
 
 
 class Record:
@@ -32,7 +38,7 @@ class Record:
     def record_trade(self, symbol, tick):
         direction = tick.get("direction")
         quantity = tick.get("amount")
-        price = "%.8f" % tick.get("price")
+        price = tick.get("price")
         ts = int(tick.get("ts")/1000)
         t = tools.ts_to_datetime_str(ts=ts, fmt="%Y-%m-%d")
         trade_list = self.trade_data.get(symbol)
@@ -52,13 +58,13 @@ class Record:
 
     def notice(self):
         notice = True
-        if self.last_notice_time != 0:
+        if self.last_notice_time > 0:
             ut_time = tools.get_cur_timestamp_ms()
-            if self.last_notice_time + 10 * 60 * 1000 < ut_time:
-                notice = True
+            if self.last_notice_time + 10 * 60 * 1000 > ut_time:
+                notice = False
         if not notice:
             return
-        self.last_notice_time = ut_time
+        self.last_notice_time = tools.get_cur_timestamp_ms()
         msg = ""
         for k, v in self.trade_data.items():
             msg = msg + "\n"
