@@ -160,9 +160,9 @@ class BaseStrategy:
                                           position=self.position))
         self.trade.add_sub(PositonSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
                                       position=self.position))
-        self.trade.add_sub(InitOrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
-                                        orders=self.orders,
-                                        request=self.request))
+        # self.trade.add_sub(InitOrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
+        #                                 orders=self.orders,
+        #                                 request=self.request))
         self.trade.add_sub(OrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol, orders=self.orders))
         if self.platform == "swap":
             self.trade.add_sub(InitAssetSub(symbol=self.trade_symbol, asset=self.assets))

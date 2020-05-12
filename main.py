@@ -21,6 +21,9 @@ def initialize():
     elif strategy == "IchimokuStrategy":
         from strategy.ichimoku_strategy import IchimokuStrategy
         IchimokuStrategy()
+    elif strategy == "ProfitStrategy":
+        from strategy.profit_strategy import ProfitStrategy
+        ProfitStrategy()
     else:
         e = Error(strategy + " not exit.")
         exit(0)
