@@ -149,7 +149,7 @@ class Trade:
                 logger.error("action error2", caller=self)
                 return None, "action error"
 
-        lever_rate = kwargs.get("lever_rate", 20)
+        lever_rate = kwargs.get("lever_rate", 50)
         if order_type == ORDER_TYPE_LIMIT:
             order_price_type = "limit"
         elif order_type == ORDER_TYPE_MARKET:
