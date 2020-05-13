@@ -1,6 +1,7 @@
 from api.huobi.huobi_request_swap import HuobiSwapRequest
 import asyncio
 import pandas as pd
+import numpy as np
 import mplfinance as mpf
 import matplotlib as mpl
 from cycler import cycler

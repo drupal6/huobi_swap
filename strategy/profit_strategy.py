@@ -11,7 +11,7 @@ class ProfitStrategy(BaseStrategy):
 
     def __init__(self):
         self.profit_per = 0.1   # 利润要求
-        self.stop_loss_per = -0.5  # 止损
+        self.stop_loss_per = -0.8  # 止损
         self.d = "none"
         super(ProfitStrategy, self).__init__()
 
@@ -43,8 +43,8 @@ class ProfitStrategy(BaseStrategy):
 
         klines = copy.copy(self.klines)
         df = klines.get("market." + self.mark_symbol + ".kline." + self.period)
-        df['fast_ema'] = talib.EMA(df['close'], timeperiod=5)
-        df['slow_ema'] = talib.EMA(df['close'], timeperiod=10)
+        df['fast_ema'] = talib.EMA(df['close'], timeperiod=3)
+        df['slow_ema'] = talib.EMA(df['close'], timeperiod=6)
         current_bar = df.iloc[-1]  # 最新的K线 Bar.
         last_bar = df.iloc[-2]
         self.d = "none"
