@@ -122,7 +122,7 @@ class MatPlot:
         # 时间序列转换，(否则日期默认会显示时分秒数据00:00:00)
         # x轴标签旋转便于显示
         pl.xticks([i for i in range(1, scale + 1, interval)],
-                  [datetime.strftime(i, format='%Y-%m-%d') for i in \
+                  [datetime.strftime(i, format='%Y-%m-%d') for i in
                    pd.date_range(df.index[0], df.index[-1], freq='%dd' % (interval))],
                   rotation=45)
         plt.show()

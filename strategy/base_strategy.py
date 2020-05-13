@@ -246,7 +246,7 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    logger.info("开多加仓 price:", price, " amount:", amount, caller=self)
+                    logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="BUY",  price=price, quantity=amount)
                     # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                     #                               action="BUY",
@@ -256,7 +256,7 @@ class BaseStrategy:
                 if abs(amount) >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    logger.info("开多减仓 price:", price, " amount:", amount, caller=self)
+                    logger.info("开多减仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="SELL", price=price, quantity=amount)
                     # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                     #                               action="SELL",
@@ -268,7 +268,7 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    logger.info("开空加仓 price:", price, " amount:", amount, caller=self)
+                    logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="SELL", price=price, quantity=-amount)
                     # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                     #                               action="SELL",
@@ -278,7 +278,7 @@ class BaseStrategy:
                 if abs(amount) >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    logger.info("开空减仓 price:", price, " amount:", amount, caller=self)
+                    logger.info("开空减仓 price:", price, "amount:", "rate:", self.lever_rate, amount, caller=self)
                     await self.create_order(action="BUY", price=price, quantity=-amount)
                     # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                     #                               action="BUY",
@@ -288,7 +288,7 @@ class BaseStrategy:
             if position.long_quantity > 0:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
-                logger.info("平多 price:", price, " amount:", position.long_quantity, caller=self)
+                logger.info("平多 price:", price, "amount:", position.long_quantity, "rate:", self.lever_rate, caller=self)
                 await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
                 # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                 #                               action="SELL",
@@ -298,7 +298,7 @@ class BaseStrategy:
             if position.short_quantity > 0:
                 price = self.last_price * (1 + self.price_offset)
                 price = round_to(price, self.price_tick)
-                logger.info("平空 price:", price, " amount:", position.short_quantity, caller=self)
+                logger.info("平空 price:", price, "amount:", position.short_quantity, "rate:", self.lever_rate, caller=self)
                 await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
                 # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                 #                               action="BUY",
