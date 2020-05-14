@@ -37,8 +37,10 @@ class MatPlot:
         profit = 0
         long_count = 0
         short_count = 0
-        profit_per = 0.1
-        stop_loss_per = -0.8
+        long_profit_per = 0.15
+        short_profit_per = 0.15
+        long_stop_loss_per = -0.5
+        short_stop_loss_per = -2
         lever_rate = 50
         fee_rate = 0.002
         for i in range(0, df_size):
@@ -58,13 +60,13 @@ class MatPlot:
                 #     profit += temp_profit
                 # else:
                 temp_profit = (current_bar["High"] - long_price) * lever_rate / long_price
-                if temp_profit >= profit_per:
+                if temp_profit >= long_profit_per:
                     long_size = 0
                     long_price = 0
                     profit += temp_profit
                 else:
                     temp_profit = (current_bar["Low"] - long_price) * lever_rate / long_price
-                    if temp_profit <= stop_loss_per:
+                    if temp_profit <= long_stop_loss_per:
                         long_size = 0
                         long_price = 0
                         profit += temp_profit
@@ -79,13 +81,13 @@ class MatPlot:
                 #     profit += temp_profit
                 # else:
                 temp_profit = (short_price - current_bar["Low"]) * lever_rate / short_price
-                if temp_profit >= profit_per:
+                if temp_profit >= short_profit_per:
                     short_size = 0
                     short_price = 0
                     profit += temp_profit
                 else:
                     temp_profit = (short_price - current_bar["High"]) * lever_rate / short_price
-                    if temp_profit <= stop_loss_per:
+                    if temp_profit <= short_stop_loss_per:
                         short_size = 0
                         short_price = 0
                         profit += temp_profit
@@ -114,8 +116,8 @@ class MatPlot:
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "BTC-USD"
-    p = "5min"
-    c = 1000
+    p = "1min"
+    c = 2000
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
     loop.close()
