@@ -186,18 +186,14 @@ class BaseStrategy:
         self.long_trade_size = 0
         self.short_trade_size = 0
         self.last_price = 0
+        self.calculate_last_price()
+        if self.last_price <= 0:
+            return
         self.calculate_signal()
         if self.test:
             self.transaction_test()
         else:
             await self.transaction()
-
-    def calculate_signal(self):
-        """
-        策略重写
-        :return:
-        """
-        pass
 
     async def check_orders(self):
         """
@@ -214,6 +210,25 @@ class BaseStrategy:
                     else:
                         await self.trade.revoke_order(self.symbol.upper(), self.trade_symbol, no.order_no)
 
+    def calculate_last_price(self):
+        """
+        计算最近的交易价格
+        :return:
+        """
+        if len(self.trades) == 0:
+            return
+        trades = copy.copy(self.trades)
+        last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
+        if last_trades and len(last_trades) > 0:
+            self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
+
+    def calculate_signal(self):
+        """
+        策略重写
+        :return:
+        """
+        pass
+
     async def transaction(self):
         """
         下单或者平仓
@@ -229,14 +244,6 @@ class BaseStrategy:
         if self.long_status == 1 and self.long_trade_size < self.min_volume:
             return
         if self.short_status == 1 and self.short_trade_size < self.min_volume:
-            return
-
-        # 获取最近的交易价格
-        trades = copy.copy(self.trades)
-        last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
-        if last_trades and len(last_trades) > 0:
-            self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
-        if self.last_price <= 0:
             return
 
         position = copy.copy(self.position)

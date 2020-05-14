@@ -16,12 +16,6 @@ class ProfitStrategy(BaseStrategy):
         super(ProfitStrategy, self).__init__()
 
     def calculate_signal(self):
-        trades = copy.copy(self.trades)
-        last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
-        if last_trades and len(last_trades) > 0:
-            self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
-        if self.last_price <= 0:
-            return
         position = copy.copy(self.position)
         if position.long_quantity > 0 and position.long_avg_price > 0:
             temp_profit = (self.last_price - position.long_avg_price) * self.lever_rate / position.long_avg_price
@@ -39,7 +33,7 @@ class ProfitStrategy(BaseStrategy):
                 self.short_status = -1
             # 平空止损
             elif temp_profit <= self.stop_loss_per:
-                self.long_status = -1
+                self.short_status = -1
 
         klines = copy.copy(self.klines)
         df = klines.get("market." + self.mark_symbol + ".kline." + self.period)
