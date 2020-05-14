@@ -10,8 +10,10 @@ class ProfitStrategy(BaseStrategy):
     """
 
     def __init__(self):
-        self.profit_per = 0.1   # 利润要求
-        self.stop_loss_per = -0.8  # 止损
+        self.long_profit_per = 0.1   # 多利润要求
+        self.short_profit_per = 0.2   # 多利润要求
+        self.long_stop_loss_per = -0.5  # 多止损
+        self.short_stop_loss_per = -2  # 空止损
         self.d = "none"
         super(ProfitStrategy, self).__init__()
 
@@ -20,19 +22,19 @@ class ProfitStrategy(BaseStrategy):
         if position.long_quantity > 0 and position.long_avg_price > 0:
             temp_profit = (self.last_price - position.long_avg_price) * self.lever_rate / position.long_avg_price
             # 达到利润平多
-            if temp_profit > self.profit_per:
+            if temp_profit > self.long_profit_per:
                 self.long_status = -1
-            # 平空止损
-            elif temp_profit <= self.stop_loss_per:
+            # 平多止损
+            elif temp_profit <= self.long_stop_loss_per:
                 self.long_status = -1
 
         if position.short_quantity > 0 and position.short_avg_price > 0:
             temp_profit = (position.short_avg_price - self.last_price) * self.lever_rate / position.short_avg_price
             # 达到利润平空
-            if temp_profit > self.profit_per:
+            if temp_profit > self.short_profit_per:
                 self.short_status = -1
             # 平空止损
-            elif temp_profit <= self.stop_loss_per:
+            elif temp_profit <= self.short_stop_loss_per:
                 self.short_status = -1
 
         klines = copy.copy(self.klines)
