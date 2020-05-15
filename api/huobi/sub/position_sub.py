@@ -39,8 +39,7 @@ class PositonSub(BaseSub):
         return data
 
     async def call_back(self, topic, data):
-        print("position:")
-        print(data)
+        logger.info("update position data:", data, caller=self)
         for position_info in data["data"]:
             print(position_info)
             if position_info["symbol"] != self._symbol.upper():
@@ -55,9 +54,11 @@ class PositonSub(BaseSub):
             if position_info["direction"] == "buy":
                 self._position.long_quantity = int(position_info["volume"])
                 self._position.long_avg_price = position_info["cost_hold"]
+                self._position.long_avg_open_price = position_info["cost_open"]
             else:
                 self._position.short_quantity = int(position_info["volume"])
                 self._position.short_avg_price = position_info["cost_hold"]
+                self._position.short_avg_open_price = position_info["cost_open"]
             self._position.utime = int(data["ts"])
         logger.info("update position position:", self._position.__str__(), caller=self)
 

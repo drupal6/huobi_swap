@@ -44,9 +44,11 @@ class InitPositonSub(BaseSub):
             if position_info["direction"] == "buy":
                 self._position.long_quantity = int(position_info["volume"])
                 self._position.long_avg_price = position_info["cost_hold"]
+                self._position.long_avg_open_price = position_info["cost_open"]
             else:
                 self._position.short_quantity = int(position_info["volume"])
                 self._position.short_avg_price = position_info["cost_hold"]
+                self._position.short_avg_open_price = position_info["cost_open"]
             self._position.utime = int(data["ts"])
         logger.info("init position position:", self._position.__str__(), caller=self)
 
