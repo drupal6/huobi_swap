@@ -48,5 +48,6 @@ class InitPositonSub(BaseSub):
                 self._position.short_avg_price = position_info["cost_hold"]
                 self._position.short_avg_open_price = position_info["cost_open"]
             self._position.utime = int(data["ts"])
+        self._position.init = True
         logger.info("init position:", self._position.__str__(), caller=self)
 

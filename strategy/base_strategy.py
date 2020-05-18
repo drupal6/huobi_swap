@@ -198,7 +198,7 @@ class BaseStrategy:
             return False
         if len(self.trades) == 0:  # 最近成交记录没有
             return False
-        if not self.position.long_quantity or not self.position.short_quantity:
+        if not self.position.init:
             return False
 
         # 设置计算参数
