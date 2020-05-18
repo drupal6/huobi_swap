@@ -290,7 +290,7 @@ class BaseStrategy:
                 await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
 
     async def create_order(self, action, price, quantity):
-        if self.test:
+        if not self.test:
             if not self.varify_create_order(action, quantity):
                 logger.info("开仓太快 action:", price, " quantity:", quantity, caller=self)
                 return
