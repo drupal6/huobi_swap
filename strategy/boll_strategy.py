@@ -17,7 +17,7 @@ class BollStrategy(BaseStrategy):
         self.short = False
         super(BollStrategy, self).__init__()
 
-    def calculate_signal(self):
+    def strategy_handle(self):
         klines = copy.copy(self.klines)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
         print("calculate_signal")

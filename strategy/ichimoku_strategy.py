@@ -16,7 +16,7 @@ class IchimokuStrategy(BaseStrategy):
         self.displacement = 26
         super(IchimokuStrategy, self).__init__()
 
-    def calculate_signal(self):
+    def strategy_handle(self):
         klines = copy.copy(self.klines)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
         df["conversion_min"] = talib.MIN(df["low"], self.conversion_periods)

@@ -128,7 +128,7 @@ class QuantificationStrategy(BaseStrategy):
             print("label:", self.position_weight_label)
             print("重置band")
 
-    def calculate_signal(self):
+    def strategy_handle(self):
         klines = copy.copy(self.klines)
         position = copy.copy(self.position)
         df = klines.get("market." + self.mark_symbol + ".kline." + self.period)

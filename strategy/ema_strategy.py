@@ -11,7 +11,7 @@ class EmaStrategy(BaseStrategy):
     def __init__(self):
         super(EmaStrategy, self).__init__()
 
-    def calculate_signal(self):
+    def strategy_handle(self):
         klines = copy.copy(self.klines)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
         df['fast_ema'] = talib.EMA(df['close'], timeperiod=self.fast_ema_window)

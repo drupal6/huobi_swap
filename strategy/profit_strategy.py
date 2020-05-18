@@ -16,7 +16,7 @@ class ProfitStrategy(BaseStrategy):
         self.d = "none"
         super(ProfitStrategy, self).__init__()
 
-    def calculate_signal(self):
+    def strategy_handle(self):
         position = copy.copy(self.position)
         if position.long_quantity > 0 and position.long_avg_open_price > 0:
             temp_profit = (self.last_price - position.long_avg_open_price) * self.lever_rate / position.long_avg_open_price
