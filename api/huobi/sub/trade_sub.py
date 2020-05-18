@@ -56,3 +56,4 @@ class TradeSub(BaseSub):
         trade_list = self._trades[channel]
         for trade in trades:
             trade_list.append(trade)
+        record.notice()

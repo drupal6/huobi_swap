@@ -21,7 +21,6 @@ from utils.config import config
 from utils import logger
 from utils.tools import round_to
 from api.model.error import Error
-from utils.recordutil import record
 
 
 class BaseStrategy:
@@ -135,6 +134,7 @@ class BaseStrategy:
         self.last_price = 0
         self.long_status = 0  # 0不处理  1做多 -1平多
         self.short_status = 0  # 0不处理  1做空 -1 平空
+        self.last_order = {}  # 最近下单记录
 
         # 初始http链接
         if self.platform == "swap":
@@ -142,7 +142,7 @@ class BaseStrategy:
         else:
             self.request = HuobiRequest(host=self.host, access_key=self.access_key, secret_key=self.secret_key)
 
-        # 初始市场监听
+        # 初始和监听市场数据
         self.market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
         self.market.add_sub(InitKlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
                                          request=self.request, klines_max_size=self.klines_max_size))
@@ -153,7 +153,7 @@ class BaseStrategy:
         self.market.add_sub(TradeSub(symbol=self.mark_symbol, trades=self.trades, trades_max_size=self.trades_max_size))
         self.market.start()
 
-        # 初始账号数据
+        # 初始和监听交易数据
         self.trade = Trade(platform=self.platform, wss=self.wss, access_key=self.access_key, secret_key=self.secret_key,
                            rest_api=self.request)
         self.trade.add_sub(InitPositonSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
@@ -172,32 +172,25 @@ class BaseStrategy:
             self.trade.add_sub(AssetSub(symbol=self.symbol, asset=self.assets))
 
         self.trade.start()
-
-        # 每五秒运行一次
+        # 运行周期
         LoopRunTask.register(self.on_ticker, self.loop_interval)
 
     async def on_ticker(self, *args, **kwargs):
-        record.notice()
-        await self.check_orders()
-        if len(self.klines) == 0:
+        await self.revoke_orders()
+        if len(self.klines) == 0:  # k线数据没有
             return
-        self.long_status = 0
-        self.short_status = 0
-        self.long_trade_size = 0
-        self.short_trade_size = 0
-        self.last_price = 0
-        self.calculate_last_price()
-        if self.last_price <= 0:
+        self.set_params()
+        if self.last_price <= 0:  # 最近一次的成交价格没有
             return
-        self.calculate_signal()
+        self.calculate_signal()  # 策略计算
         if self.test:
             self.transaction_test()
         else:
             await self.transaction()
 
-    async def check_orders(self):
+    async def revoke_orders(self):
         """
-        撤销挂单(毫秒)
+        撤销超时挂单(毫秒)
         :return:
         """
         orders = copy.copy(self.orders)
@@ -210,11 +203,16 @@ class BaseStrategy:
                     else:
                         await self.trade.revoke_order(self.symbol.upper(), self.trade_symbol, no.order_no)
 
-    def calculate_last_price(self):
+    def set_params(self):
         """
-        计算最近的交易价格
+        设置参数
         :return:
         """
+        self.long_status = 0
+        self.short_status = 0
+        self.long_trade_size = 0
+        self.short_trade_size = 0
+        self.last_price = 0
         if len(self.trades) == 0:
             return
         trades = copy.copy(self.trades)
@@ -255,9 +253,7 @@ class BaseStrategy:
                     price = round_to(price, self.price_tick)
                     logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="BUY",  price=price, quantity=amount)
-                    # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                    #                               action="BUY",
-                    #                               price=price, quantity=amount, kwargs=p)
+
             elif self.long_trade_size < position.long_quantity:  # 开多减仓
                 amount = position.long_quantity - self.long_trade_size
                 if abs(amount) >= self.min_volume:
@@ -265,9 +261,6 @@ class BaseStrategy:
                     price = round_to(price, self.price_tick)
                     logger.info("开多减仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="SELL", price=price, quantity=amount)
-                    # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                    #                               action="SELL",
-                    #                               price=price, quantity=amount, kwargs=p)
 
         if self.short_status == 1 and self.trading_curb != "long":  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
@@ -277,9 +270,7 @@ class BaseStrategy:
                     price = round_to(price, self.price_tick)
                     logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="SELL", price=price, quantity=-amount)
-                    # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                    #                               action="SELL",
-                    #                               price=price, quantity=-amount, kwargs=p)
+
             elif self.short_trade_size < position.short_quantity:  # 开空减仓
                 amount = position.short_quantity - self.short_trade_size
                 if abs(amount) >= self.min_volume:
@@ -287,9 +278,6 @@ class BaseStrategy:
                     price = round_to(price, self.price_tick)
                     logger.info("开空减仓 price:", price, "amount:", "rate:", self.lever_rate, amount, caller=self)
                     await self.create_order(action="BUY", price=price, quantity=-amount)
-                    # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                    #                               action="BUY",
-                    #                               price=price, quantity=-amount, kwargs=p)
 
         if self.long_status == -1:  # 平多
             if position.long_quantity > 0:
@@ -297,9 +285,6 @@ class BaseStrategy:
                 price = round_to(price, self.price_tick)
                 logger.info("平多 price:", price, "amount:", position.long_quantity, "rate:", self.lever_rate, caller=self)
                 await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
-                # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                #                               action="SELL",
-                #                               price=price, quantity=position.long_quantity, kwargs=p)
 
         if self.short_status == -1:  # 平空
             if position.short_quantity > 0:
@@ -307,11 +292,11 @@ class BaseStrategy:
                 price = round_to(price, self.price_tick)
                 logger.info("平空 price:", price, "amount:", position.short_quantity, "rate:", self.lever_rate, caller=self)
                 await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
-                # await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
-                #                               action="BUY",
-                #                               price=price, quantity=-position.short_quantity, kwargs=p)
 
     async def create_order(self, action, price, quantity):
+        if not self.varify_create_order(action, quantity):
+            logger.info("开仓太快 action:", price, " quantity:", quantity, caller=self)
+            return
         p = {"lever_rate": self.lever_rate}
         if self.platform == "swap":
             await self.trade.create_order(symbol=self.trade_symbol.upper(), contract_type=self.trade_symbol,
@@ -321,6 +306,33 @@ class BaseStrategy:
             await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                                           action=action,
                                           price=price, quantity=quantity, kwargs=p)
+
+    def varify_create_order(self, action, quantity):
+        """
+        检查开多和开空的时间间隔是否太短 5s同一订单不下单
+        :param action:
+        :param quantity:
+        :return:
+        """
+        ut_time = tools.get_cur_timestamp_ms()
+        long_or_short_order = None
+        if action == "BUY" and quantity > 0:  # 开多
+            long_or_short_order = "long"
+        elif action == "SELL" and quantity < 0:  # 开空
+            long_or_short_order = "short"
+        last__order_info = self.last_order.get(long_or_short_order)
+        if last__order_info:
+            if last__order_info["action"] == action and last__order_info["quantity"] == quantity and \
+                    ut_time < last__order_info["ts"] + 5000:
+                return False
+        if long_or_short_order:
+            last__order_info = {
+                "action": action,
+                "quantity": quantity,
+                "ts": ut_time
+            }
+            self.last_order[long_or_short_order] = last__order_info
+        return True
 
     def transaction_test(self):
         """

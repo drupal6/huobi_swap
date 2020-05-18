@@ -1,6 +1,5 @@
 from api.huobi.sub.base_sub import BaseSub
-from api.model.asset import Asset
-from utils import tools
+from utils import logger
 
 
 class InitAssetSub(BaseSub):
@@ -45,4 +44,5 @@ class InitAssetSub(BaseSub):
         self._asset.update = update
         self._asset.assets = assets
         self._asset.timestamp = data["ts"]
+        logger.info("init assets:", self._asset.__str__(), caller=self)
 
