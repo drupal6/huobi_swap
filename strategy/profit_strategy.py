@@ -1,7 +1,6 @@
 import copy
 from strategy.base_strategy import BaseStrategy
 import talib
-from utils.tools import round_to
 
 
 class ProfitStrategy(BaseStrategy):

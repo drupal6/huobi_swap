@@ -31,12 +31,16 @@ class InitOrderSub(BaseSub):
         SingleTask.run(self._init)
 
     async def _init(self):
-        success, error = await self._request.get_open_orders(self._symbol)
+        if self._platform == "swap":
+            success, error = await self._request.get_open_orders(self._contract_type)
+        else:
+            success, error = await self._request.get_open_orders(self._symbol)
         print(success)
         if error:
             e = Error("get open orders failed!")
-        for order_info in success["data"]["orders"]:
-            await self.call_back(self._ch, order_info)
+        if success:
+            for order_info in success["data"]["orders"]:
+                await self.call_back(self._ch, order_info)
 
     def ch(self):
         return "get_open_orders"
