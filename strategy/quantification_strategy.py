@@ -201,7 +201,7 @@ class QuantificationStrategy(BaseStrategy):
                     #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
                     #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
                 if self.trading_curb != "long":  # 平空仓
-                    if grid < len(self.band - 2):
+                    if grid < len(self.band) - 2:
                         grid = grid + 1
                     if position.short_quantity > self.short_position_weight[grid]:
                         self.short_status = 1
