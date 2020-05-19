@@ -65,7 +65,7 @@ class Record:
         if not notice:
             return
         self.last_notice_time = tools.get_cur_timestamp_ms()
-        msg = ">>>"
+        msg = ""
         for k, v in self.trade_data.items():
             msg = msg + "\n"
             if len(v) > 0:

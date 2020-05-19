@@ -265,7 +265,7 @@ class Trade:
 
         # If len(order_nos) == 1, you will cancel an order.
         if len(order_nos) == 1:
-            success, error = await self._rest_api.revoke_orders(symbol, order_nos[0])
+            success, error = await self._rest_api.revoke_order(symbol, order_nos[0])
             if error:
                 return order_nos[0], error
             if success.get("errors"):
