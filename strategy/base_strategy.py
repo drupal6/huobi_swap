@@ -299,11 +299,11 @@ class BaseStrategy:
             if self.platform == "swap":
                 await self.trade.create_order(symbol=self.trade_symbol.upper(), contract_type=self.trade_symbol,
                                               action=action,
-                                              price=price, quantity=quantity, kwargs=p)
+                                              price=price, quantity=quantity, **p)
             else:
                 await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                                               action=action,
-                                              price=price, quantity=quantity, kwargs=p)
+                                              price=price, quantity=quantity, **p)
         else:
             if action == "BUY":
                 if quantity > 0:
