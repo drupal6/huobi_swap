@@ -189,6 +189,7 @@ class BaseStrategy:
         if len(orders) > 0:
             for no in orders.values():
                 if ut_time >= no.ctime + self.order_cancel_time:
+                    print("取消订单", ut_time, no.ctime, self.order_cancel_time)
                     if self.platform == "swap":
                         await self.trade.revoke_order(self.trade_symbol.upper(), self.trade_symbol, no.order_no)
                     else:
@@ -262,7 +263,7 @@ class BaseStrategy:
             if self.short_trade_size > position.short_quantity:  # 开空加仓
                 amount = self.short_trade_size - position.short_quantity
                 if amount >= self.min_volume:
-                    price = self.last_price * (1 + self.price_offset)
+                    price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
                     logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="SELL", price=price, quantity=-amount)
@@ -270,7 +271,7 @@ class BaseStrategy:
             elif self.short_trade_size < position.short_quantity:  # 开空减仓
                 amount = position.short_quantity - self.short_trade_size
                 if abs(amount) >= self.min_volume:
-                    price = self.last_price * (1 - self.price_offset)
+                    price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
                     logger.info("开空减仓 price:", price, "amount:", "rate:", self.lever_rate, amount, caller=self)
                     await self.create_order(action="BUY", price=price, quantity=-amount)

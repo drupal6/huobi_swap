@@ -7,6 +7,7 @@ from utils.tools import round_to
 import math
 from collections import deque
 from utils import fileutil
+from utils import logger
 
 
 class QuantificationStrategy(BaseStrategy):
@@ -120,13 +121,13 @@ class QuantificationStrategy(BaseStrategy):
                     self.short_position_weight.append((i + 1) * self.short_position_weight_rate)
             self.position_weight_label.append(num)
             self._save_file()
-            print("std:", std, "atr:", self.atr, "min_index:", self.min_index, "num:", num)
-            print("price_margin:", self.price_margin)
-            print("band:", self.band)
-            print("long_weight:", self.long_position_weight)
-            print("short_weight:", self.short_position_weight)
-            print("label:", self.position_weight_label)
-            print("重置band")
+            # print("std:", std, "atr:", self.atr, "min_index:", self.min_index, "num:", num)
+            # print("price_margin:", self.price_margin)
+            # print("band:", self.band)
+            # print("long_weight:", self.long_position_weight)
+            # print("short_weight:", self.short_position_weight)
+            # print("label:", self.position_weight_label)
+            # print("重置band")
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
@@ -151,12 +152,14 @@ class QuantificationStrategy(BaseStrategy):
         if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空
+            logger.info("平仓 grid:", grid, caller=self)
             # print("平grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
             #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
             #       "short_weight:", self.short_position_weight,"close:", current_bar["close"])
         else:
             add_new_grid = False
             if self.grids[-1] != grid:
+                logger.info("last grid:", self.grids[-1], "new grid", grid, caller=self)
                 self.grids.append(grid)
                 self._save_file()
                 add_new_grid = True

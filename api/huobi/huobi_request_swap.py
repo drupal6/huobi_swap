@@ -191,7 +191,6 @@ class HuobiSwapRequest:
         body = orders_data
         success, error = await self.request("POST", uri, body=body, auth=True)
         return success, error
-        
 
     async def revoke_order(self, contract_code, order_id="", client_order_id=""):
         """ Revoke an order.

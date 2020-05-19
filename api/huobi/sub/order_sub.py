@@ -45,7 +45,6 @@ class OrderSub(BaseSub):
         return data
 
     async def call_back(self, channel, order_info):
-        print(order_info)
         if order_info["symbol"] != self._symbol.upper():
             return
         if self._platform == "swap":
