@@ -54,7 +54,7 @@ class Position:
     def __str__(self):
         info = "[symbol: {symbol}, " \
                "short_quantity: {short_quantity}, short_avg_price: {short_avg_price}, short_avg_open_price: {short_avg_open_price}, " \
-               "long_quantity: {long_quantity}, long_avg_price: {long_avg_price}, short_avg_open_price: {long_avg_open_price}, liquid_price: {liquid_price}, " \
+               "long_quantity: {long_quantity}, long_avg_price: {long_avg_price}, long_avg_open_price: {long_avg_open_price}, liquid_price: {liquid_price}, " \
                "utime: {utime}]"\
             .format(symbol=self.symbol,
                     short_quantity=self.short_quantity, short_avg_price=self.short_avg_price, short_avg_open_price=self.short_avg_open_price,
