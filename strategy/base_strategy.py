@@ -189,7 +189,6 @@ class BaseStrategy:
         if len(orders) > 0:
             for no in orders.values():
                 if ut_time >= no.ctime + self.order_cancel_time:
-                    print("取消订单", ut_time, no.ctime, self.order_cancel_time)
                     if self.platform == "swap":
                         await self.trade.revoke_order(self.trade_symbol.upper(), self.trade_symbol, no.order_no)
                     else:
@@ -244,11 +243,11 @@ class BaseStrategy:
         position = copy.copy(self.position)
         if self.long_status == 1:  # 开多
             if self.long_trade_size > position.long_quantity:   # 开多加仓
-                if self.trading_curb != "short":
-                    amount = self.long_trade_size - position.long_quantity
-                    if amount >= self.min_volume:
-                        price = self.last_price * (1 + self.price_offset)
-                        price = round_to(price, self.price_tick)
+                amount = self.long_trade_size - position.long_quantity
+                if amount >= self.min_volume:
+                    price = self.last_price * (1 + self.price_offset)
+                    price = round_to(price, self.price_tick)
+                    if self.trading_curb != "short":
                         logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                         await self.create_order(action="BUY",  price=price, quantity=amount)
 
@@ -262,11 +261,11 @@ class BaseStrategy:
 
         if self.short_status == 1:  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
-                if self.trading_curb != "long":
-                    amount = self.short_trade_size - position.short_quantity
-                    if amount >= self.min_volume:
-                        price = self.last_price * (1 - self.price_offset)
-                        price = round_to(price, self.price_tick)
+                amount = self.short_trade_size - position.short_quantity
+                if amount >= self.min_volume:
+                    price = self.last_price * (1 - self.price_offset)
+                    price = round_to(price, self.price_tick)
+                    if self.trading_curb != "long":
                         logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                         await self.create_order(action="SELL", price=price, quantity=-amount)
 
@@ -323,7 +322,7 @@ class BaseStrategy:
                                 caller=self)
                 elif quantity < 0:
                     self.position.short_quantity = self.position.short_quantity - quantity
-                    logger.info("开孔 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
+                    logger.info("开空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
                                 caller=self)
 
     def varify_create_order(self, action, quantity):
