@@ -16,6 +16,10 @@ def make_zip(config):
             continue
         if parent.endswith("inspectionProfiles"):
             continue
+        if parent.endswith("file"):
+            continue
+        if parent.__contains__("\\logs\\"):
+            continue
         for filename in filenames:
             pathfile = os.path.join(parent, filename)
             arcname = pathfile[pre_len:].strip(os.path.sep)   #相对路径
