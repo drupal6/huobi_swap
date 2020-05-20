@@ -146,16 +146,10 @@ class QuantificationStrategy(BaseStrategy):
         if len(self.grids) == 0:
             self.grids.append(grid)
             self._save_file()
-        # print("grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-        #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-        #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
         if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空
             logger.info("平仓 grid:", grid, caller=self)
-            # print("平grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-            #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-            #       "short_weight:", self.short_position_weight,"close:", current_bar["close"])
         else:
             add_new_grid = False
             if self.grids[-1] != grid:
@@ -164,54 +158,36 @@ class QuantificationStrategy(BaseStrategy):
                 self._save_file()
                 add_new_grid = True
             if len(self.grids) == 1:  # 补仓
-                if self.trading_curb != "short":  # 开多仓
-                    self.long_status = 1
-                    self.long_trade_size = self.long_position_weight[grid]
-                    # print("补多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-                    #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-                    #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
-                if self.trading_curb != "long":  # 开空仓
-                    self.short_status = 1
-                    self.short_trade_size = self.short_position_weight[grid]
-                    # print("补空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-                    #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-                    #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
+                # 开多仓
+                self.long_status = 1
+                self.long_trade_size = self.long_position_weight[grid]
+                # 开空仓
+                self.short_status = 1
+                self.short_trade_size = self.short_position_weight[grid]
                 return
 
             if add_new_grid and self.grids[-2] < self.grids[-1]:  # 向上
-                if self.trading_curb != "short":  # 平多仓
-                    if grid > 0:
-                        grid = grid - 1
-                    if position.long_quantity > self.long_position_weight[grid]:
-                        self.long_status = 1
-                        self.long_trade_size = self.long_position_weight[grid]
-                        # print("平多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-                        #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-                        #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
-                if self.trading_curb != "long":  # 加空仓
-                    self.short_status = 1
-                    self.short_trade_size = self.short_position_weight[grid]
-                    # print("加空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-                    #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-                    #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
+                # 平多仓
+                if grid > 0:
+                    grid = grid - 1
+                if position.long_quantity > self.long_position_weight[grid]:
+                    self.long_status = 1
+                    self.long_trade_size = self.long_position_weight[grid]
+                # 加空仓
+                self.short_status = 1
+                self.short_trade_size = self.short_position_weight[grid]
                 return
 
             if add_new_grid and self.grids[-2] > self.grids[-1]:  # 向下
-                if self.trading_curb != "short":  # 加多仓
-                    self.long_status = 1
-                    self.long_trade_size = self.long_position_weight[grid]
-                    # print("加多grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-                    #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-                    #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
-                if self.trading_curb != "long":  # 平空仓
-                    if grid < len(self.band) - 2:
-                        grid = grid + 1
-                    if position.short_quantity > self.short_position_weight[grid]:
-                        self.short_status = 1
-                        self.short_trade_size = self.short_position_weight[grid]
-                        # print("平空grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-                        #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-                        #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
+                # 加多仓
+                self.long_status = 1
+                self.long_trade_size = self.long_position_weight[grid]
+                # 平空仓
+                if grid < len(self.band) - 2:
+                    grid = grid + 1
+                if position.short_quantity > self.short_position_weight[grid]:
+                    self.short_status = 1
+                    self.short_trade_size = self.short_position_weight[grid]
 
 
 

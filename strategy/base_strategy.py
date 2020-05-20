@@ -242,14 +242,15 @@ class BaseStrategy:
             return
 
         position = copy.copy(self.position)
-        if self.long_status == 1 and self.trading_curb != "short":  # 开多
+        if self.long_status == 1:  # 开多
             if self.long_trade_size > position.long_quantity:   # 开多加仓
-                amount = self.long_trade_size - position.long_quantity
-                if amount >= self.min_volume:
-                    price = self.last_price * (1 + self.price_offset)
-                    price = round_to(price, self.price_tick)
-                    logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
-                    await self.create_order(action="BUY",  price=price, quantity=amount)
+                if self.trading_curb != "short":
+                    amount = self.long_trade_size - position.long_quantity
+                    if amount >= self.min_volume:
+                        price = self.last_price * (1 + self.price_offset)
+                        price = round_to(price, self.price_tick)
+                        logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
+                        await self.create_order(action="BUY",  price=price, quantity=amount)
 
             elif self.long_trade_size < position.long_quantity:  # 开多减仓
                 amount = position.long_quantity - self.long_trade_size
@@ -259,14 +260,15 @@ class BaseStrategy:
                     logger.info("开多减仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                     await self.create_order(action="SELL", price=price, quantity=amount)
 
-        if self.short_status == 1 and self.trading_curb != "long":  # 开空
+        if self.short_status == 1:  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
-                amount = self.short_trade_size - position.short_quantity
-                if amount >= self.min_volume:
-                    price = self.last_price * (1 - self.price_offset)
-                    price = round_to(price, self.price_tick)
-                    logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
-                    await self.create_order(action="SELL", price=price, quantity=-amount)
+                if self.trading_curb != "long":
+                    amount = self.short_trade_size - position.short_quantity
+                    if amount >= self.min_volume:
+                        price = self.last_price * (1 - self.price_offset)
+                        price = round_to(price, self.price_tick)
+                        logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
+                        await self.create_order(action="SELL", price=price, quantity=-amount)
 
             elif self.short_trade_size < position.short_quantity:  # 开空减仓
                 amount = position.short_quantity - self.short_trade_size
