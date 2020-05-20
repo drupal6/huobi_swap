@@ -5,6 +5,7 @@ import mplfinance as mpf
 import matplotlib as mpl
 from cycler import cycler
 from matplotlib import pyplot as plt
+from utils import fileutil
 mpl.use('TkAgg')
 
 
@@ -90,7 +91,35 @@ class MatPlot:
         # show_nontrading:是否显示非交易日，默认False
         # savefig:导出图片，填写文件名及后缀
         mpf.plot(df, **kwargs, style=s, show_nontrading=False, savefig="%s-%s" % (symbol, period))
+        MatPlot.plot_quantification(symbol, size)
         plt.show()
+
+    @classmethod
+    def plot_quantification(cls, symbol, size):
+        p = _load_file(symbol)
+        if not p:
+            return
+        band = p.get("band")
+        for band_lind in band:
+            color = "purple"
+            plt.plot([0, size], [band_lind, band_lind], linestyle="--", color=color, linewidth='2')
+
+
+def _load_file(mark_symbol):
+    file_data = fileutil.load_json("D:/work/coin/huobi_swap/file/QuantificationStrategy_%s.json" % mark_symbol)
+    if len(file_data) > 0:
+        p = {
+            "price_margin": file_data.get("price_margin"),
+            "long_position_weight": file_data.get("long_position_weight"),
+            "short_position_weight": file_data.get("short_position_weight"),
+            "position_weight_label": file_data.get("position_weight_label"),
+            "band": file_data.get("band"),
+            "atr": file_data.get("atr"),
+            "min_index": file_data.get("min_index"),
+            "last_grid": file_data.get("last_grid"),
+        }
+        return p
+    return None
 
 
 if __name__ == "__main__":
