@@ -83,7 +83,7 @@ class Config:
     def __init__(self):
         self.absPath = sys.path[0]
         self.basePath = self.absPath[0:-7]
-        self.zipfilename = "hbdm-client-%s.zip" % (time.strftime("%Y%m%d%H%M%S", time.localtime()))
+        self.zipfilename = "huobi-swap-%s.zip" % (time.strftime("%Y%m%d%H%M%S", time.localtime()))
         self.zipFilePath = os.path.join(self.absPath, self.zipfilename)
         self.ip = None
         self.user = None
@@ -108,10 +108,10 @@ if __name__ == '__main__':
     make_zip(config)
     print("压缩完毕")
 
-    s = open_ssh(config)
-    ssh_put(s, config)
-    cmd = "cd %s; unzip -o %s; rm -rf %s;" %(config.remove_path, config.zipfilename, config.zipfilename)
-    ssh_cmd(s, cmd)
-    close_ssh(s)
-    os.remove(config.zipfilename)
-    print("推送完毕")
+    # s = open_ssh(config)
+    # ssh_put(s, config)
+    # cmd = "cd %s; unzip -o %s; rm -rf %s;" %(config.remove_path, config.zipfilename, config.zipfilename)
+    # ssh_cmd(s, cmd)
+    # close_ssh(s)
+    # os.remove(config.zipfilename)
+    # print("推送完毕")
