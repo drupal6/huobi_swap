@@ -330,6 +330,8 @@ class BaseStrategy:
         :param limit_type: 如果是限制类型就不能加仓
         :return:
         """
+        if self.trading_curb == "limit":
+            return False
         if self.trading_curb == limit_type:
             return False
         # 资产控制是否可以加仓
@@ -341,7 +343,7 @@ class BaseStrategy:
         if not asset:
             logger.error(self.symbol, "no asset", caller=self)
             return False
-        return
+        return True
 
     def varify_create_order(self, action, quantity):
         """

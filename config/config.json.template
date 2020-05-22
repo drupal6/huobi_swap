@@ -35,7 +35,7 @@
         "loop_interval": 5,  # 心跳时间
         "price_offset": 0.0003,  # 下单盘偏差
         "order_cancel_time": 30000,  # 挂单取消时间
-        "trading_curb": "none",  # 交易类型 long 只做多 short只做空  none多空都做
+        "trading_curb": "none",  # 交易类型 long 只做多 short只做空  none多空都做 limit不能加仓
         "long_position_weight_rate": 1,  # 做多仓位倍数
         "short_position_weight_rate": 1  # 做空仓位倍数
     }
