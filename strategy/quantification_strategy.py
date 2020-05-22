@@ -57,7 +57,6 @@ class QuantificationStrategy(BaseStrategy):
         }
         if len(self.grids) > 0:
             file_data["last_grid"] = int(self.grids[-1])
-        print(file_data)
         fileutil.save_json(self.file_path % self.mark_symbol, file_data)
 
     def reset_bank(self, df):
@@ -80,7 +79,6 @@ class QuantificationStrategy(BaseStrategy):
                 print("atr1:", (current_bar["close"] * self.atr_per / self.lever_rate), "atr:", atr)
                 return
             num = math.floor((current_bar["max_high"] - current_bar["min_low"])/atr)
-            # print(num)
             if num < self.margin_num_limit:  # 网格太少
                 return
             self.atr = atr
@@ -121,13 +119,6 @@ class QuantificationStrategy(BaseStrategy):
                     self.short_position_weight.append((i + 1) * self.short_position_weight_rate)
             self.position_weight_label.append(num)
             self._save_file()
-            # print("std:", std, "atr:", self.atr, "min_index:", self.min_index, "num:", num)
-            # print("price_margin:", self.price_margin)
-            # print("band:", self.band)
-            # print("long_weight:", self.long_position_weight)
-            # print("short_weight:", self.short_position_weight)
-            # print("label:", self.position_weight_label)
-            # print("重置band")
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
