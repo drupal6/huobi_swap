@@ -7,6 +7,7 @@ from utils.tools import round_to
 import math
 from collections import deque
 from utils import fileutil
+from utils import logger
 
 
 class QuantificationStrategy1(BaseStrategy):
@@ -15,14 +16,14 @@ class QuantificationStrategy1(BaseStrategy):
     """
 
     def __init__(self):
-        self.file_path = "../file/QuantificationStrategy_%s.json"
+        self.file_path = "../file/QuantificationStrategy1_%s.json"
         self.price_margin = []  # 设置网格价格
         self.long_position_weight = []  # 设置多网格的仓位
         self.short_position_weight = []  # 设置空网格的仓位
         self.position_weight_label = []  # 设置网格仓位标签
         self.band = []  # 网格价格
         self.atr = 0  # 真实波幅
-        self.atr_per = 0.1   # 网格利润要求
+        self.atr_per = 0.1   # 最小网格高度要求
         self.min_index = -1  # 网格基准先位置
         self.grids = deque(maxlen=10)  # 记录价格在网格中的位置
         self.close_position_rate = 5  # 平仓价格倍数
@@ -56,7 +57,6 @@ class QuantificationStrategy1(BaseStrategy):
         }
         if len(self.grids) > 0:
             file_data["last_grid"] = int(self.grids[-1])
-        print(file_data)
         fileutil.save_json(self.file_path % self.mark_symbol, file_data)
 
     def reset_bank(self, df):
@@ -69,13 +69,11 @@ class QuantificationStrategy1(BaseStrategy):
             if len(open_orders) == 0 and position.short_quantity == 0 and position.long_quantity == 0:
                 reset = True
         if reset:
-            self.atr = 0
             df["max_high"] = talib.MAX(df["high"], self.klines_max_size)
             df["min_low"] = talib.MIN(df["low"], self.klines_max_size)
             current_bar = df.iloc[-1]
-            atr = current_bar["close"] * self.atr_per/self.lever_rate
-            num = math.floor((current_bar["max_high"] - current_bar["min_low"])/atr)
-            # print(num)
+            atr = current_bar["close"] * self.atr_per / self.lever_rate
+            num = math.floor((current_bar["max_high"] - current_bar["min_low"]) / atr)
             if num < self.margin_num_limit:  # 网格太少
                 return
             self.atr = atr
@@ -91,7 +89,6 @@ class QuantificationStrategy1(BaseStrategy):
             for i in range(0, num):
                 self.price_margin.append(round_to((i - self.min_index) * self.atr, self.price_tick))
             self.price_margin.append(round_to(((self.min_index + self.close_position_rate) * self.atr), self.price_tick))
-            # df['olhc'] = df[["open", "close", "high", "low"]].mean(axis=1)
             std = np.std(df['close'])
             if std < 1:
                 std = 1.1
@@ -116,13 +113,6 @@ class QuantificationStrategy1(BaseStrategy):
                     self.short_position_weight.append((i + 1) * self.short_position_weight_rate)
             self.position_weight_label.append(num)
             self._save_file()
-            print("std:", std, "atr:", self.atr, "min_index:", self.min_index, "num:", num)
-            print("price_margin:", self.price_margin)
-            print("band:", self.band)
-            print("long_weight:", self.long_position_weight)
-            print("short_weight:", self.short_position_weight)
-            print("label:", self.position_weight_label)
-            print("重置band")
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
@@ -141,18 +131,14 @@ class QuantificationStrategy1(BaseStrategy):
         if len(self.grids) == 0:
             self.grids.append(grid)
             self._save_file()
-        # print("grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-        #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-        #       "short_weight:", self.short_position_weight, "close:", current_bar["close"])
         if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空
-            # print("平grids:", self.grids, "grid:", grid, "longPosition:", position.long_quantity,
-            #       "shortPosition:", position.short_quantity, "long_weight:", self.long_position_weight,
-            #       "short_weight:", self.short_position_weight,"close:", current_bar["close"])
+            logger.info("平仓 grid:", grid, caller=self)
         else:
             add_new_grid = False
             if self.grids[-1] != grid:
+                logger.info("last grid:", self.grids[-1], "new grid", grid, caller=self)
                 self.grids.append(grid)
                 self._save_file()
                 add_new_grid = True
@@ -182,8 +168,16 @@ class QuantificationStrategy1(BaseStrategy):
                 self.long_status = 1
                 self.long_trade_size = self.long_position_weight[grid]
                 # 平空仓
-                if grid < len(self.band - 2):
+                if grid < len(self.band) - 2:
                     grid = grid + 1
                 if position.short_quantity > self.short_position_weight[grid]:
                     self.short_status = 1
                     self.short_trade_size = self.short_position_weight[grid]
+
+
+
+
+
+
+
+
