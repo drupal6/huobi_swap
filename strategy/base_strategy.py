@@ -183,7 +183,7 @@ class BaseStrategy:
         await self.after_strategy()   # 策略之后执行
 
     async def before_strategy(self):
-        # 撤销超过order_cancel_time的挂单
+        # 撤单
         orders = copy.copy(self.orders)
         ut_time = tools.get_cur_timestamp_ms()
         if len(orders) > 0:
@@ -207,7 +207,6 @@ class BaseStrategy:
         self.long_trade_size = 0
         self.short_trade_size = 0
         self.last_price = 0
-        # 获取最近成交的价格
         trades = copy.copy(self.trades)
         last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
         if last_trades and len(last_trades) > 0:
@@ -247,7 +246,7 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    if self.trading_curb != "short":
+                    if self.limit_add_position("short"):
                         logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                         await self.create_order(action="BUY",  price=price, quantity=amount)
 
@@ -265,7 +264,7 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    if self.trading_curb != "long":
+                    if self.limit_add_position("long"):
                         logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
                         await self.create_order(action="SELL", price=price, quantity=-amount)
 
@@ -324,6 +323,25 @@ class BaseStrategy:
                     self.position.short_quantity = self.position.short_quantity - quantity
                     logger.info("开空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
                                 caller=self)
+
+    def limit_add_position(self, limit_type):
+        """
+        限制加仓位
+        :param limit_type: 如果是限制类型就不能加仓
+        :return:
+        """
+        if self.trading_curb == limit_type:
+            return False
+        # 资产控制是否可以加仓
+        asserts = copy.copy(self.assets)
+        if not asserts.assets:
+            logger.error("asserts not init", caller=self)
+            return False
+        asset = asserts.assets.get(self.symbol)
+        if not asset:
+            logger.error(self.symbol, "no asset", caller=self)
+            return False
+        return
 
     def varify_create_order(self, action, quantity):
         """
