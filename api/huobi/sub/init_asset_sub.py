@@ -31,18 +31,18 @@ class InitAssetSub(BaseSub):
             total = float(item["margin_balance"])
             free = float(item["margin_available"])
             locked = float(item["margin_frozen"])
-            risk = float(item["risk_rate"])
-            rate = float(item["lever_rate"])
-            factor = float(item["adjust_factor"])
-            liquidation = float(item["liquidation_price"])
+            risk = item["risk_rate"]
+            rate = item["lever_rate"]
+            factor = item["adjust_factor"]
+            liquidation = item["liquidation_price"]
             if total > 0:
                 assets[symbol] = {
                     "total": "%.8f" % total,
                     "free": "%.8f" % free,
                     "locked": "%.8f" % locked,
-                    "risk": "%.8f" % risk,
+                    "risk": risk,
                     "rate": rate,
-                    "liquidation": "%.8f" % liquidation,
+                    "liquidation": liquidation,
                     "factor": factor
                 }
         if assets == self._asset.assets:
