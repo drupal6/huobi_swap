@@ -75,7 +75,6 @@ class MatPlot:
               "real_profile:", (profit - (long_count + short_count) * fee_rate * 2))
 
 
-
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "BTC-USD"
