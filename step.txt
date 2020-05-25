@@ -1,2 +1,9 @@
 mplfinance安装
 pip install --upgrade mplfinance
+
+
+
+plant
+1、通过控制资产和仓位实现风控
+2、使用maplotlib将策略可视化
+3、加回测框架
