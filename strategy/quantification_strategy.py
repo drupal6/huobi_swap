@@ -102,19 +102,19 @@ class QuantificationStrategy(BaseStrategy):
             self.band = band.tolist()
             for i in range(0, num):  # 做多的情况 计算网格仓位
                 if i == 0:
-                    self.long_position_weight.append((num - 1) * self.long_position_weight_rate)
+                    self.long_position_weight.append((num - 1))
                 if i == num - 1:
                     self.long_position_weight.append(0)
                 else:
-                    self.long_position_weight.append((num - i - 1) * self.long_position_weight_rate)
+                    self.long_position_weight.append((num - i - 1))
                 self.position_weight_label.append(i)
             for i in range(0, num):  # 做空的情况 计算网格仓位
                 if i == 0:
                     self.short_position_weight.append(0)
                 if i == num - 1:
-                    self.short_position_weight.append((num - 1) * self.short_position_weight_rate)
+                    self.short_position_weight.append((num - 1))
                 else:
-                    self.short_position_weight.append((i + 1) * self.short_position_weight_rate)
+                    self.short_position_weight.append((i + 1))
             self.position_weight_label.append(num)
             self._save_file()
 

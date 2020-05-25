@@ -238,7 +238,8 @@ class BaseStrategy:
             return
         if self.short_status == 1 and self.short_trade_size < self.min_volume:
             return
-
+        self.long_trade_size = self.long_trade_size * self.long_position_weight_rate
+        self.short_trade_size = self.short_trade_size * self.short_position_weight_rate
         position = copy.copy(self.position)
         if self.long_status == 1:  # 开多
             if self.long_trade_size > position.long_quantity:   # 开多加仓
