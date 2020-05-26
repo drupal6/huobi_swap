@@ -155,7 +155,7 @@ class QuantificationStrategy1(BaseStrategy):
                 # 平多仓
                 if grid > 0:
                     grid = grid - 1
-                if position.long_quantity > self.long_position_weight[grid]:
+                if position.long_quantity > self.long_position_weight[grid] * self.long_position_weight_rate:
                     self.long_status = 1
                     self.long_trade_size = self.long_position_weight[grid]
                 # 加空仓
@@ -170,7 +170,7 @@ class QuantificationStrategy1(BaseStrategy):
                 # 平空仓
                 if grid < len(self.band) - 2:
                     grid = grid + 1
-                if position.short_quantity > self.short_position_weight[grid]:
+                if position.short_quantity > self.short_position_weight[grid] * self.short_position_weight_rate:
                     self.short_status = 1
                     self.short_trade_size = self.short_position_weight[grid]
 
