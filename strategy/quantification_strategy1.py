@@ -152,15 +152,15 @@ class QuantificationStrategy1(BaseStrategy):
                 return
 
             if add_new_grid and self.grids[-2] < self.grids[-1]:  # 向上
+                # 加空仓
+                self.short_status = 1
+                self.short_trade_size = self.short_position_weight[grid]
                 # 平多仓
                 if grid > 0:
                     grid = grid - 1
                 if position.long_quantity > self.long_position_weight[grid] * self.long_position_weight_rate:
                     self.long_status = 1
                     self.long_trade_size = self.long_position_weight[grid]
-                # 加空仓
-                self.short_status = 1
-                self.short_trade_size = self.short_position_weight[grid]
                 return
 
             if add_new_grid and self.grids[-2] > self.grids[-1]:  # 向下
