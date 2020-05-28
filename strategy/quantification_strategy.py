@@ -29,9 +29,9 @@ class QuantificationStrategy(BaseStrategy):
         self.close_position_rate = 5  # 平仓价格倍数
         self.margin_num_limit = 4  # 最少网格要求
         super(QuantificationStrategy, self).__init__()
-        self._load_file()
+        self.load_file()
 
-    def _load_file(self):
+    def load_file(self):
         file_data = fileutil.load_json(self.file_path % self.mark_symbol)
         if len(file_data) > 0:
             self.price_margin = file_data.get("price_margin")
@@ -41,11 +41,17 @@ class QuantificationStrategy(BaseStrategy):
             self.band = file_data.get("band")
             self.atr = file_data.get("atr")
             self.min_index = file_data.get("min_index")
+            self.trading_curb = file_data.get("trading_curb")
+            self.long_position_weight_rate = file_data.get("long_position_weight_rate")
+            self.short_position_weight_rate = file_data.get("short_position_weight_rate")
             last_grid = file_data.get("last_grid")
+            second_grid = file_data.get("second_grid")
+            if second_grid:
+                self.grids.append(second_grid)
             if last_grid:
                 self.grids.append(last_grid)
 
-    def _save_file(self):
+    def save_file(self):
         file_data = {
             "price_margin": self.price_margin,
             "long_position_weight": self.long_position_weight,
@@ -53,10 +59,15 @@ class QuantificationStrategy(BaseStrategy):
             "position_weight_label": self.position_weight_label,
             "band": self.band,
             "atr": self.atr,
-            "min_index": self.min_index
+            "min_index": self.min_index,
+            "long_position_weight_rate": self.long_position_weight_rate,
+            "short_position_weight_rate": self.short_position_weight_rate,
+            "trading_curb": self.trading_curb
         }
         if len(self.grids) > 0:
             file_data["last_grid"] = int(self.grids[-1])
+        if len(self.grids) > 1:
+            file_data["second_grid"] = int(self.grids[-2])
         fileutil.save_json(self.file_path % self.mark_symbol, file_data)
 
     def reset_bank(self, df):
@@ -116,7 +127,7 @@ class QuantificationStrategy(BaseStrategy):
                 else:
                     self.short_position_weight.append((i + 1))
             self.position_weight_label.append(num)
-            self._save_file()
+            self.save_file()
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
@@ -134,7 +145,7 @@ class QuantificationStrategy(BaseStrategy):
             grid = pd.cut([current_bar["close"]], self.band, labels=self.position_weight_label)[0]
         if len(self.grids) == 0:
             self.grids.append(grid)
-            self._save_file()
+            self.save_file()
         if grid == -1 or grid == len(self.band):  # 平仓
             self.long_status = -1  # 平多
             self.short_status = -1  # 平空
@@ -144,7 +155,7 @@ class QuantificationStrategy(BaseStrategy):
             if self.grids[-1] != grid:
                 logger.info("last grid:", self.grids[-1], "new grid", grid, caller=self)
                 self.grids.append(grid)
-                self._save_file()
+                self.save_file()
                 add_new_grid = True
             if len(self.grids) == 1:  # 补仓
                 # 开多仓

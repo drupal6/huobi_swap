@@ -11,6 +11,9 @@
         "secret": "xxxx",
         "access_token": "xxxxx"
     },
+    "HTTPSERVER":{
+        "port":8080
+    },
     "ACCOUNTS": {
         "host": "https://api.btcgateway.pro",
         "mark_wss": "wss://www.btcgateway.pro",

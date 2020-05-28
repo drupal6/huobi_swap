@@ -1,85 +1,59 @@
-from socket import *
-from select import select
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+import threading
+from utils import logger
+from utils.dingding import DingTalk
 
 
-class HTTPServer:
-    """
-    将具体http server功能封装
-    """
+strategy = None
 
-    def __init__(self, server_address):
-        self.server_address = server_address
-        self.rlist = self.wlist = self.xlist = []
-        self.create_socket()
-        self.bind()
 
-    def create_socket(self):
-        """
-        创建套接字
-        :return:
-        """
-        self.sockfd = socket()
-        self.sockfd.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-
-    def bind(self):
-        self.sockfd.bind(self.server_address)
-        self.ip = self.server_address[0]
-        self.port = self.server_address[1]
-
-    def serve_forever(self):
-        """
-        启动服务
-        :return:
-        """
-        self.sockfd.listen(5)
-        print("Listen the port %d" %self.port)
-        self.rlist = [self.sockfd]
-        self.wlist = []
-        self.xlist = []
-        while True:
-            rs, ws, xs = select(self.rlist, self.wlist, self.xlist)
-            for r in rs:
-                if r is self.sockfd:
-                    c, addr = r.accept()
-                    print('Connect from', addr)
-                    self.rlist.append(c)
-                else:
-                    # 处理浏览器
-                    self.handle(r)
-
-    # 处理客户端请求
-    def handle(self, connfd):
-        # 接收http请求
-        request = connfd.recv(1024)
-        # 防止浏览器断开
-        if not request:
-            self.rlist.remove(connfd)
-            connfd.close()
-            return
-
-        # 请求解析
-        request_line = request.splitlines()[0]
-        info = request_line.decode().split(' ')[1]
-        print(connfd.getpeername(), ':', info)
+class HTTPHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
-        print(self.headers)
-        print(self.command)
-        req_datas = self.rfile.read(int(self.headers['content-length']))  # 重点在此步!
-        print(req_datas.decode())
-        data = {
-            'result_code': '2',
-            'result_desc': 'Success',
-            'timestamp': '',
-            'data': {'message_id': '25d55ad283aa400af464c76d713c07ad'}
-        }
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
+        # print(self.headers)
+        # print(self.command)
+        req_datas = self.rfile.read(int(self.headers['content-length']))
+        req_data = json.loads(req_datas.decode())
+        req_param = req_data["text"]["content"].rstrip()
+
+        if strategy:
+            msg = None
+            if req_param == "h":
+                msg = strategy.e_g()
+            elif req_param == "s":
+                msg = strategy.show()
+            else:
+                if "=" in req_param:
+                    params = req_param.split("=")
+                    key = params[0]
+                    value = params[1]
+                    msg = strategy.set_param(key, value)
+                    if not msg:
+                        msg = "not support. %s" % req_param
+                else:
+                    msg = "param error. %s" % req_param
+            if msg:
+                DingTalk.send_text_msg(content= "\n" + msg)
 
 
-if __name__ == '__main__':
-    server_addr = ('0.0.0.0', 8080)
-    httpd = HTTPServer(server_addr)
-    httpd.serve_forever()
+class MyHttpServer(threading.Thread):
+    def __init__(self, port):
+        threading.Thread.__init__(self)
+        self.port = port
+
+    def run(self):
+        try:
+            http_server = HTTPServer(('', int(self.port)), HTTPHandler)
+            http_server.serve_forever()
+        except BaseException:
+            logger.error("MyHttpServer error.", caller=self)
+
+
+if __name__ == "__main__":
+    ms = MyHttpServer(8080)
+    ms.start()
+
+
+
+

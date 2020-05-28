@@ -373,6 +373,33 @@ class BaseStrategy:
             self.last_order[long_or_short_order] = last__order_info
         return True
 
+    def save_file(self):
+        pass
+
+    def load_file(self):
+        pass
+
+    def e_g(self):
+        return "tc=[none, limit, long, short]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
+
+    def show(self):
+        return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s" % \
+               (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate)
+
+    def set_param(self, key, value):
+        msg = None
+        if key == "tc":
+            self.trading_curb = value
+            msg = "trading_curb=%s" % self.trading_curb
+        if key == "lr":
+            self.long_position_weight_rate = int(value)
+            msg = "long_position_weight_rate=%s" % self.long_position_weight_rate
+        if key == "sr":
+            self.short_position_weight_rate = int(value)
+            msg = "short_position_weight_rate=%s" % self.short_position_weight_rate
+        if msg:
+            self.save_file()
+        return msg
 
 
 
