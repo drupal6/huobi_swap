@@ -45,6 +45,16 @@ class InitAssetSub(BaseSub):
                     "liquidation": liquidation,
                     "factor": factor
                 }
+            else:
+                assets[symbol] = {
+                    "total": 0,
+                    "free": 0,
+                    "locked": 0,
+                    "risk": risk,
+                    "rate": rate,
+                    "liquidation": liquidation,
+                    "factor": factor
+                }
         if assets == self._asset.assets:
             update = False
         else:

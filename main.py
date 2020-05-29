@@ -40,7 +40,7 @@ def main():
 
     quant.initialize(config_file)
     bs = initialize()
-    if bs:
+    if bs and config.httpserver.get("port"):
         ms = MyHttpServer(config.httpserver.get("port"))
         ms.start()
         httpserver.strategy = bs

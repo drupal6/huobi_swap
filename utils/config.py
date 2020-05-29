@@ -63,7 +63,7 @@ class Config:
         self.heartbeat = update_fields.get("HEARTBEAT", {})
         self.proxy = update_fields.get("PROXY", None)
         self.dingding = update_fields.get("DINGDING", {})
-        self.httpserver = update_fields.get("HTTPSERVER", {"port":8080})
+        self.httpserver = update_fields.get("HTTPSERVER", {})
         for k, v in update_fields.items():
             setattr(self, k, v)
 
