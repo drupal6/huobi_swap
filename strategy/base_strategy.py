@@ -293,6 +293,8 @@ class BaseStrategy:
 
     async def create_order(self, action, price, quantity):
         if not self.test:
+            if self.trading_curb == "lock":
+                return
             if not self.varify_create_order(action, quantity):
                 logger.info("开仓太快 action:", price, " quantity:", quantity, caller=self)
                 return
@@ -380,7 +382,7 @@ class BaseStrategy:
         pass
 
     def e_g(self):
-        return "tc=[none, limit, long, short]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
+        return "tc=[none, limit, long, short, lock]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
 
     def show(self):
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s" % \
