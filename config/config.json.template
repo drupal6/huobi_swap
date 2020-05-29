@@ -9,9 +9,7 @@
     },
     "DINGDING": {
         "secret": "xxxx",
-        "access_token": "xxxxx"
-    },
-    "HTTPSERVER":{
+        "access_token": "xxxxx",
         "port":8080
     },
     "ACCOUNTS": {

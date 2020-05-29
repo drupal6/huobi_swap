@@ -32,7 +32,6 @@ class Config:
         self.proxy = None
         self.config_file = None
         self.dingding = {}
-        self.httpserver = {}
 
     def loads(self, config_file=None):
         """ Load config file.
@@ -63,7 +62,6 @@ class Config:
         self.heartbeat = update_fields.get("HEARTBEAT", {})
         self.proxy = update_fields.get("PROXY", None)
         self.dingding = update_fields.get("DINGDING", {})
-        self.httpserver = update_fields.get("HTTPSERVER", {})
         for k, v in update_fields.items():
             setattr(self, k, v)
 

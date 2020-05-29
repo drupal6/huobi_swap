@@ -36,12 +36,12 @@ def main():
     if len(sys.argv) > 1:
         config_file = sys.argv[1]
     else:
-        config_file = "config/config.json"
+        config_file = "config/eth-config.json"
 
     quant.initialize(config_file)
     bs = initialize()
-    if bs and config.httpserver.get("port"):
-        ms = MyHttpServer(config.httpserver.get("port"))
+    if bs and config.dingding.get("port"):
+        ms = MyHttpServer(config.dingding.get("port"))
         ms.start()
         httpserver.strategy = bs
     quant.start()
