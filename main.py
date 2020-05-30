@@ -40,8 +40,8 @@ def main():
 
     quant.initialize(config_file)
     bs = initialize()
-    if bs and config.dingding.get("port"):
-        ms = MyHttpServer(config.dingding.get("port"))
+    if bs and config.markets.get("port"):
+        ms = MyHttpServer(config.markets.get("port"))
         ms.start()
         httpserver.strategy = bs
     quant.start()

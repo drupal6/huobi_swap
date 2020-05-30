@@ -247,17 +247,16 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    if self.limit_add_position("short"):
-                        logger.info("开多加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
-                        await self.create_order(action="BUY",  price=price, quantity=amount)
+                    ret = await self.create_order(action="BUY",  price=price, quantity=amount)
+                    logger.info("多加price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
             elif self.long_trade_size < position.long_quantity:  # 开多减仓
                 amount = position.long_quantity - self.long_trade_size
                 if abs(amount) >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    logger.info("开多减仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
-                    await self.create_order(action="SELL", price=price, quantity=amount)
+                    ret = await self.create_order(action="SELL", price=price, quantity=amount)
+                    logger.info("多减price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.short_status == 1:  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
@@ -265,39 +264,40 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    if self.limit_add_position("long"):
-                        logger.info("开空加仓 price:", price, "amount:", amount, "rate:", self.lever_rate, caller=self)
-                        await self.create_order(action="SELL", price=price, quantity=-amount)
+                    ret = await self.create_order(action="SELL", price=price, quantity=-amount)
+                    logger.info("空加price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
             elif self.short_trade_size < position.short_quantity:  # 开空减仓
                 amount = position.short_quantity - self.short_trade_size
                 if abs(amount) >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    logger.info("开空减仓 price:", price, "amount:", "rate:", self.lever_rate, amount, caller=self)
-                    await self.create_order(action="BUY", price=price, quantity=-amount)
+                    ret = await self.create_order(action="BUY", price=price, quantity=-amount)
+                    logger.info("空减price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.long_status == -1:  # 平多
             if position.long_quantity > 0:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
-                logger.info("平多 price:", price, "amount:", position.long_quantity, "rate:", self.lever_rate, caller=self)
-                await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
+                ret = await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
+                logger.info("平多price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.short_status == -1:  # 平空
             if position.short_quantity > 0:
                 price = self.last_price * (1 + self.price_offset)
                 price = round_to(price, self.price_tick)
-                logger.info("平空 price:", price, "amount:", position.short_quantity, "rate:", self.lever_rate, caller=self)
-                await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
+                ret = await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
+                logger.info("平空price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
     async def create_order(self, action, price, quantity):
         if not self.test:
-            if self.trading_curb == "lock":
-                return
-            if not self.varify_create_order(action, quantity):
+            if not self.limit_assert(action, quantity):
+                return -1
+            if not self.limit_curb(action, quantity):
+                return -2
+            if not self.limit_order(action, quantity):
                 logger.info("开仓太快 action:", price, " quantity:", quantity, caller=self)
-                return
+                return -3
             p = {"lever_rate": self.lever_rate}
             if self.platform == "swap":
                 await self.trade.create_order(symbol=self.trade_symbol.upper(), contract_type=self.trade_symbol,
@@ -326,18 +326,15 @@ class BaseStrategy:
                     self.position.short_quantity = self.position.short_quantity - quantity
                     logger.info("开空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
                                 caller=self)
+            return 0
 
-    def limit_add_position(self, limit_type):
+    def limit_assert(self, action, quantity):
         """
-        限制加仓位
-        :param limit_type: 如果是限制类型就不能加仓
+        资产限制
+        :param action:
+        :param quantity:
         :return:
         """
-        if self.trading_curb == "limit":
-            return False
-        if self.trading_curb == limit_type:
-            return False
-        # 资产控制是否可以加仓
         asserts = copy.copy(self.assets)
         if not asserts.assets:
             logger.error("asserts not init", caller=self)
@@ -348,7 +345,32 @@ class BaseStrategy:
             return False
         return True
 
-    def varify_create_order(self, action, quantity):
+    def limit_curb(self, action, quantity):
+        """
+        交易类型限制
+        :param action:
+        :param quantity:
+        :return:
+        """
+        if self.trading_curb == "lock":  # 不能下单
+            return False
+        if self.trading_curb == "none":  # 都能下单
+            return True
+
+        if self.trading_curb == "buy":  # 只加仓
+            if (action == "BUY" and quantity < 0) or (action == "SELL" and quantity > 0):
+                return False
+        if self.trading_curb == "sell":  # 只减仓
+            if (action == "BUY" and quantity > 0) or (action == "SELL" and quantity < 0):
+                return False
+
+        if self.trading_curb == "long" and quantity < 0:  # 只做多
+            return False
+        if self.trading_curb == "short" and quantity > 0:  # 只做空
+            return False
+        return True
+
+    def limit_order(self, action, quantity):
         """
         检查开多和开空的时间间隔是否太短 5s同一订单不下单
         :param action:
@@ -361,10 +383,10 @@ class BaseStrategy:
             long_or_short_order = "long"
         elif action == "SELL" and quantity < 0:  # 开空
             long_or_short_order = "short"
-        last__order_info = self.last_order.get(long_or_short_order)
-        if last__order_info:
-            if last__order_info["action"] == action and last__order_info["quantity"] == quantity and \
-                    ut_time < last__order_info["ts"] + 5000:
+        last_order_info = self.last_order.get(long_or_short_order)
+        if last_order_info:
+            if last_order_info["action"] == action and last_order_info["quantity"] == quantity and \
+                    ut_time < last_order_info["ts"] + 5000:
                 return False
         if long_or_short_order:
             last__order_info = {
@@ -382,7 +404,7 @@ class BaseStrategy:
         pass
 
     def e_g(self):
-        return "tc=[none, limit, long, short, lock]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
+        return "tc=[none, long, short, sell, buy, lock]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
 
     def show(self):
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s" % \

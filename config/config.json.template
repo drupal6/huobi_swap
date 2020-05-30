@@ -9,8 +9,7 @@
     },
     "DINGDING": {
         "secret": "xxxx",
-        "access_token": "xxxxx",
-        "port":8080
+        "access_token": "xxxxx"
     },
     "ACCOUNTS": {
         "host": "https://api.btcgateway.pro",
@@ -21,6 +20,7 @@
         "is_test": true  # 是否是测试 true是 false不是
     },
     "MARKETS": {
+        "port":8080,
         "platform": "swap",   # 火币那种合约 jiaoge交割合约 swap永续合约
         "strategy": "BollStrategy",  # 选择那种交易策略
         "klines_max_size": 200,  # 获取的k大小
@@ -36,7 +36,7 @@
         "loop_interval": 5,  # 心跳时间
         "price_offset": 0.0003,  # 下单盘偏差
         "order_cancel_time": 30000,  # 挂单取消时间
-        "trading_curb": "none",  # 交易类型 long 只做多 short只做空  none多空都做 limit不能加仓 lock锁定不做交易
+        "trading_curb": "none",  # 交易类型 long 只做多 short只做空  none多空都做 lock锁定不做交易 sell不能加仓 buy不能减仓
         "long_position_weight_rate": 1,  # 做多仓位倍数
         "short_position_weight_rate": 1  # 做空仓位倍数
     }
