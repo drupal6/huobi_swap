@@ -189,7 +189,13 @@ class QuantificationStrategy(BaseStrategy):
                     self.short_status = 1
                     self.short_trade_size = self.short_position_weight[grid]
 
-
+    def show(self):
+        msg = super(QuantificationStrategy, self).show()
+        band_str = "".join(str(self.band))
+        band_size = str(len(self.band))
+        grid_str = str(self.grids[-1])
+        curr_price = str(self.band[self.grids[-1]])
+        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s" % (msg, band_str, band_size, grid_str, curr_price)
 
 
 
