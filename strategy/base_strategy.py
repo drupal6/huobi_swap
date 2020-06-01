@@ -280,14 +280,14 @@ class BaseStrategy:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
                 ret = await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
-                logger.info("平多price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
+                logger.info("平多price:", price, "num:", position.long_quantity, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.short_status == -1:  # 平空
             if position.short_quantity > 0:
                 price = self.last_price * (1 + self.price_offset)
                 price = round_to(price, self.price_tick)
                 ret = await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
-                logger.info("平空price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
+                logger.info("平空price:", price, "num:", -position.short_quantity, "r:", self.lever_rate, "ret", ret, caller=self)
 
     async def create_order(self, action, price, quantity):
         if not self.test:
