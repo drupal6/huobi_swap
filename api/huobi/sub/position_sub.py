@@ -1,6 +1,7 @@
 from api.huobi.sub.base_sub import BaseSub
 from utils import logger
 from utils import tools
+from utils.config import config
 
 
 class PositonSub(BaseSub):
@@ -49,12 +50,15 @@ class PositonSub(BaseSub):
                 pass
                 # if position_info["contract_type"] != self._contract_type:
                 #     return
+            volume = int(position_info["volume"])
             if position_info["direction"] == "buy":
-                self._position.long_quantity = int(position_info["volume"])
+                long_fixed_position = config.markets.get("long_fixed_position", 0)
+                self._position.long_quantity = max(volume - long_fixed_position, 0)
                 self._position.long_avg_price = position_info["cost_hold"]
                 self._position.long_avg_open_price = position_info["cost_open"]
             else:
-                self._position.short_quantity = int(position_info["volume"])
+                short_fixed_position = config.markets.get("short_fixed_position", 0)
+                self._position.short_quantity = max(volume - short_fixed_position, 0)
                 self._position.short_avg_price = position_info["cost_hold"]
                 self._position.short_avg_open_price = position_info["cost_open"]
             self._position.utime = int(data["ts"])

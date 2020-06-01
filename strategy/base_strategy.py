@@ -402,8 +402,10 @@ class BaseStrategy:
         return "tc=[none, long, short, sell, buy, lock]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
 
     def show(self):
-        return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s" % \
-               (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate)
+        return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
+               "long_fixed_position=%s\nshort_fixed_position=%s" % \
+               (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate,
+                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0))
 
     def set_param(self, key, value):
         msg = None

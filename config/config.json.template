@@ -38,6 +38,8 @@
         "order_cancel_time": 30000,  # 挂单取消时间
         "trading_curb": "none",  # 交易类型 long 只做多 short只做空  none多空都做 lock锁定不做交易 sell不能加仓 buy不能减仓
         "long_position_weight_rate": 1,  # 做多仓位倍数
-        "short_position_weight_rate": 1  # 做空仓位倍数
+        "short_position_weight_rate": 1,  # 做空仓位倍数
+        "long_fixed_position": 0,  # 固定多仓位
+        "short_fixed_position": 0  # 固定空仓位
     }
 }
