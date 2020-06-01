@@ -248,7 +248,6 @@ class BaseStrategy:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
                     ret = await self.create_order(action="BUY",  price=price, quantity=amount)
-                    logger.info("多加price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
             elif self.long_trade_size < position.long_quantity:  # 开多减仓
                 amount = position.long_quantity - self.long_trade_size
@@ -256,7 +255,6 @@ class BaseStrategy:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
                     ret = await self.create_order(action="SELL", price=price, quantity=amount)
-                    logger.info("多减price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.short_status == 1:  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
@@ -265,7 +263,6 @@ class BaseStrategy:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
                     ret = await self.create_order(action="SELL", price=price, quantity=-amount)
-                    logger.info("空加price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
             elif self.short_trade_size < position.short_quantity:  # 开空减仓
                 amount = position.short_quantity - self.short_trade_size
@@ -273,21 +270,18 @@ class BaseStrategy:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
                     ret = await self.create_order(action="BUY", price=price, quantity=-amount)
-                    logger.info("空减price:", price, "num:", amount, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.long_status == -1:  # 平多
             if position.long_quantity > 0:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
                 ret = await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
-                logger.info("平多price:", price, "num:", position.long_quantity, "r:", self.lever_rate, "ret", ret, caller=self)
 
         if self.short_status == -1:  # 平空
             if position.short_quantity > 0:
                 price = self.last_price * (1 + self.price_offset)
                 price = round_to(price, self.price_tick)
                 ret = await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
-                logger.info("平空price:", price, "num:", -position.short_quantity, "r:", self.lever_rate, "ret", ret, caller=self)
 
     async def create_order(self, action, price, quantity):
         if not self.test:
@@ -307,6 +301,7 @@ class BaseStrategy:
                 await self.trade.create_order(symbol=self.symbol.upper(), contract_type=self.trade_symbol,
                                               action=action,
                                               price=price, quantity=quantity, **p)
+            logger.info("action", action, "price:", price, "num:", quantity, "r:", self.lever_rate, "ret", caller=self)
         else:
             if action == "BUY":
                 if quantity > 0:
