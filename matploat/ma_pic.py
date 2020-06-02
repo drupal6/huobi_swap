@@ -5,6 +5,7 @@ import mplfinance as mpf
 import matplotlib as mpl
 from cycler import cycler
 from matplotlib import pyplot as plt
+import talib
 # 图形参数控制
 import pylab as pl
 from datetime import datetime
@@ -14,7 +15,7 @@ mpl.use('TkAgg')
 class MatPlot:
 
     @classmethod
-    async def get_data(cls, symbol, period="1min", size=200):
+    async def get_data(cls, symbol, period="5min", size=200):
         success, error = await request.get_klines(contract_type=symbol, period=period, size=size)
         if error:
             return None
@@ -38,13 +39,13 @@ class MatPlot:
         :return:
         """
         scale = 100
-        num_periods_fast = 10  # 快速EMA的时间周期，10
+        num_periods_fast = 9  # 快速EMA的时间周期，10
         K_fast = 2 / (num_periods_fast + 1)  # 快速EMA平滑常数
         ema_fast = 0
-        num_periods_slow = 40  # 慢速EMA的时间周期，40
+        num_periods_slow = 26  # 慢速EMA的时间周期，40
         K_slow = 2 / (num_periods_slow + 1)  # 慢速EMA平滑常数
         ema_slow = 0
-        num_periods_macd = 20  # MACD EMA的时间周期，20
+        num_periods_macd = 12  # MACD EMA的时间周期，20
         K_macd = 2 / (num_periods_macd + 1)  # MACD EMA平滑常数
         ema_macd = 0
 
@@ -53,6 +54,7 @@ class MatPlot:
         macd_values = []
         macd_signal_values = []
         MACD_hist_values = []
+
 
         for close_price in df['Close']:
             if ema_fast == 0:  # 第一个值
@@ -90,8 +92,17 @@ class MatPlot:
         ema_macd = df['EMA_MACD20d']
         macd_hist = df['MACD_hist']
 
+        df['new_macd'], df['new_macdsignal'], df['new_macdhist'] = talib.MACD(df["Close"], fastperiod=12, slowperiod=26,
+                                                                  signalperiod=9)
+        # df.fillna(0, inplace=True)
+        new_macd = df['new_macd']
+        new_macdsignal = df['new_macdsignal']
+        new_macdhist = df['new_macdhist']
+        print(macd)
+        print(new_macd)
+
         # 设置画布，纵向排列的三个子图
-        fig, ax = plt.subplots(3, 1)
+        fig, ax = plt.subplots(4, 1)
 
         # 设置标签显示中文
         plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -108,13 +119,20 @@ class MatPlot:
         ema_s.plot(ax=ax[0], color='r', lw=1., legend=True, use_index=False)
 
         # 应用同步缩放
-        ax[1] = plt.subplot(312, sharex=ax[0])
+        ax[1] = plt.subplot(412, sharex=ax[0])
         macd.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
         ema_macd.plot(ax=ax[1], color='g', lw=1., legend=True, use_index=False)
 
+        ax[2] = plt.subplot(413, sharex=ax[0])
+        new_macd.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        new_macdsignal.plot(ax=ax[2], color='g', lw=1., legend=True, use_index=False)
+        new_macdhist.plot(ax=ax[2], color='r', lw=1., legend=True, use_index=False)
+
         # 应用同步缩放
-        ax[2] = plt.subplot(313, sharex=ax[0])
-        macd_hist.plot(ax=ax[2], color='r', kind='bar', legend=True, sharex=ax[0])
+        ax[3] = plt.subplot(414, sharex=ax[0])
+        macd_hist.plot(ax=ax[3], color='r', kind='bar', legend=True, sharex=ax[0])
+
+
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         interval = scale // 20

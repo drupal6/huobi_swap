@@ -13,7 +13,6 @@ class IchimokuStrategy(BaseStrategy):
         self.conversion_periods = 9  # 转换线周期
         self.base_periods = 26  # 基准线周期
         self.lagging_span2_periods = 52
-        self.displacement = 26
         super(IchimokuStrategy, self).__init__()
 
     def strategy_handle(self):
@@ -28,6 +27,7 @@ class IchimokuStrategy(BaseStrategy):
         df["leada"] = (df["conversion"] + df["base"]) / 2
         df["leadb_min"] = talib.MIN(df["low"], self.lagging_span2_periods)
         df["leadb_max"] = talib.MAX(df["high"], self.lagging_span2_periods)
+        df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
         df = df[['id', 'open', 'high', 'low', 'close', 'amount', 'conversion', 'base', 'leada', 'leadb']]
         print(df)
 
