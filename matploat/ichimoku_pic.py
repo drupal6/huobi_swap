@@ -8,7 +8,9 @@ from matplotlib import pyplot as plt
 import talib
 # 图形参数控制
 import pylab as pl
+import numpy as np
 from datetime import datetime
+from utils import trend_util
 mpl.use('TkAgg')
 
 
@@ -16,6 +18,9 @@ class MatPlot:
 
     @classmethod
     async def get_data(cls, symbol, period="5min", size=200):
+        conversion_periods = 9  # 转换线周期
+        base_periods = 26  # 基准线周期
+        lagging_span2_periods = 52
         success, error = await request.get_klines(contract_type=symbol, period=period, size=size)
         if error:
             return None
@@ -23,10 +28,31 @@ class MatPlot:
             data = success.get("data")
             df = pd.DataFrame(data, columns={"id": 0, 'vol': 1, 'count': 2, 'open': 3, 'close': 4, 'low': 5,
                                                        'high': 6, 'amount': 7})
-            df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount']]
+
+            df["conversion_min"] = talib.MIN(df["low"], conversion_periods)
+            df["conversion_max"] = talib.MAX(df["high"], conversion_periods)
+            df["conversion"] = (df["conversion_min"] + df["conversion_max"]) / 2
+            df["base_min"] = talib.MIN(df["low"], base_periods)
+            df["base_max"] = talib.MAX(df["high"], base_periods)
+            df["base"] = (df["base_min"] + df["base_max"]) / 2
+            df["leada"] = (df["conversion"] + df["base"]) / 2
+            df["leadb_min"] = talib.MIN(df["low"], lagging_span2_periods)
+            df["leadb_max"] = talib.MAX(df["high"], lagging_span2_periods)
+            df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
+            curr_bar = df.iloc[-1]
+            id_values = []
+            for i in range(1, base_periods + 1):
+                id_values.append(int(curr_bar["id"] + i * 5 * 60))
+            ids = {"id": pd.Series(id_values)}
+            df1 = pd.DataFrame(ids, columns=['id', 'open', 'high', 'low', 'close', 'vol', 'amount'])
+            df = df.append(df1)
+            df["delay_price"] = pd.Series(trend_util.move(df["close"].values.tolist(), -base_periods))
+
+            df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount', 'delay_price', 'base', 'leada', 'leadb']]
             df = df.rename(columns={"id": "date"})
             df["date"] = pd.to_datetime(df["date"], unit="s")
             df.set_index(["date"], inplace=True)
+            print(df['delay_price'])
             MatPlot.show(df, symbol, period, size)
 
     @classmethod
@@ -37,19 +63,9 @@ class MatPlot:
         :param size:
         :return:
         """
-        scale = 100
-        df["conversion_min"] = talib.MIN(df["low"], 9)
-        df["conversion_max"] = talib.MAX(df["high"], 9)
-        df["conversion"] = (df["conversion_min"] + df["conversion_max"]) / 2
-        df["base_min"] = talib.MIN(df["low"], 26)
-        df["base_max"] = talib.MAX(df["high"], 26)
-        df["base"] = (df["base_min"] + df["base_max"]) / 2
-        df["leada"] = (df["conversion"] + df["base"]) / 2
-        df["leadb_min"] = talib.MIN(df["low"], 52)
-        df["leadb_max"] = talib.MAX(df["high"], 52)
-        df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
 
-        close_price = df["close"]
+        scale = 100
+        delay_price = df["delay_price"]
         conversion = df["conversion"]
         base = df["base"]
         leada = df["leada"]
@@ -68,7 +84,7 @@ class MatPlot:
         # 设置第一子图的y轴信息及标题
         ax[0].set_ylabel('Close price in ￥')
         ax[0].set_title('A_Stock %s MACD Indicator' % ("test"))
-        close_price.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
+        delay_price.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
         conversion.plot(ax=ax[0], color='r', lw=1., legend=True, use_index=False)
         base.plot(ax=ax[0], color='b', lw=1., legend=True, use_index=False)
         leada.plot(ax=ax[0], color='y', lw=1., legend=True, use_index=False)

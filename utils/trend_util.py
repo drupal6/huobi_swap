@@ -1,4 +1,5 @@
 import talib
+import numpy as np
 
 
 def trend(klines):
@@ -53,10 +54,24 @@ def ichimoku_trend(klines, symbol, period, time_periods=[9, 26, 52]):
     df["leada"] = (df["conversion"] + df["base"]) / 2
     df["leadb_min"] = talib.MIN(df["low"], time_periods[2])
     df["leadb_max"] = talib.MAX(df["high"], time_periods[2])
+    df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
     df = df[['id', 'open', 'high', 'low', 'close', 'amount', 'conversion', 'base', 'leada', 'leadb']]
     return 0
 
 
 def trade_trend():
     return 0
+
+
+def move(data, offset):
+    i = len(data)
+    if offset == 0:
+        return data
+    elif offset < 0:
+        return data[-offset:i]
+    else:
+        new_data = np.zeros(i + offset)
+        for j in range(0, offset):
+            new_data[j] = 0
+        new_data[offset:i+offset] = data[0:i]
 
