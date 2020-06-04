@@ -12,6 +12,10 @@ import numpy as np
 from datetime import datetime
 from utils import trend_util
 mpl.use('TkAgg')
+pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
+pd.set_option('display.max_rows', 1000)  # 最多显示行数.
+# pd.set_option('precision', 6)  # 浮点数的精度】
+pd.set_option('display.float_format', lambda x:'%.2f' % x)  # 设置不用科学计数法，保留两位小数.
 
 
 class MatPlot:
@@ -39,6 +43,7 @@ class MatPlot:
             df["leadb_min"] = talib.MIN(df["low"], lagging_span2_periods)
             df["leadb_max"] = talib.MAX(df["high"], lagging_span2_periods)
             df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
+            df["delay_price"] = pd.Series(trend_util.move(df["close"].values.tolist(), -base_periods))
             curr_bar = df.iloc[-1]
             id_values = []
             for i in range(1, base_periods + 1):
@@ -46,13 +51,12 @@ class MatPlot:
             ids = {"id": pd.Series(id_values)}
             df1 = pd.DataFrame(ids, columns=['id', 'open', 'high', 'low', 'close', 'vol', 'amount'])
             df = df.append(df1)
-            df["delay_price"] = pd.Series(trend_util.move(df["close"].values.tolist(), -base_periods))
-
-            df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount', 'delay_price', 'base', 'leada', 'leadb']]
+            df["leada"] = pd.Series(trend_util.move(df["leada"].values.tolist(), base_periods))
+            df["leadb"] = pd.Series(trend_util.move(df["leadb"].values.tolist(), base_periods))
+            df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount', 'delay_price', 'conversion', 'base', 'leada', 'leadb']]
             df = df.rename(columns={"id": "date"})
             df["date"] = pd.to_datetime(df["date"], unit="s")
             df.set_index(["date"], inplace=True)
-            print(df['delay_price'])
             MatPlot.show(df, symbol, period, size)
 
     @classmethod
@@ -70,30 +74,25 @@ class MatPlot:
         base = df["base"]
         leada = df["leada"]
         leadb = df["leadb"]
+        close = df["close"]
 
         # 设置画布，纵向排列的三个子图
-        fig, ax = plt.subplots(2, 1)
+        fig, ax = plt.subplots(1, 1)
 
         # 设置标签显示中文
         plt.rcParams['font.sans-serif'] = ['SimHei']
         plt.rcParams['axes.unicode_minus'] = False
 
         # 调整子图的间距，hspace表示高(height)方向的间距
-        plt.subplots_adjust(hspace=.1)
-
         # 设置第一子图的y轴信息及标题
-        ax[0].set_ylabel('Close price in ￥')
-        ax[0].set_title('A_Stock %s MACD Indicator' % ("test"))
-        delay_price.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
-        conversion.plot(ax=ax[0], color='r', lw=1., legend=True, use_index=False)
-        base.plot(ax=ax[0], color='b', lw=1., legend=True, use_index=False)
-        leada.plot(ax=ax[0], color='y', lw=1., legend=True, use_index=False)
-        leadb.plot(ax=ax[0], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
-
-
-        # 应用同步缩放
-        ax[1] = plt.subplot(212, sharex=ax[0])
-
+        ax.set_ylabel('Close price in ￥')
+        ax.set_title('A_Stock %s ichimoku Indicator' % ("test"))
+        delay_price.plot(ax=ax, color='g', lw=1., legend=True, use_index=False)
+        conversion.plot(ax=ax, color='r', lw=1., legend=True, use_index=False)
+        base.plot(ax=ax, color='b', lw=1., legend=True, use_index=False)
+        leada.plot(ax=ax, color='y', lw=1., legend=True, use_index=False)
+        leadb.plot(ax=ax, color='k', lw=1., legend=True, use_index=False)
+        close.plot(ax=ax, color='c', lw=1., legend=True, use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         interval = scale // 20

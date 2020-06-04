@@ -72,6 +72,7 @@ def move(data, offset):
     else:
         new_data = np.zeros(i + offset)
         for j in range(0, offset):
-            new_data[j] = 0
+            new_data[j] = np.nan
         new_data[offset:i+offset] = data[0:i]
+        return new_data
 
