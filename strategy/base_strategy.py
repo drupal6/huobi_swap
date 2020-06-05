@@ -21,6 +21,9 @@ from utils.config import config
 from utils import logger
 from utils.tools import round_to
 from api.model.error import Error
+from api.model.order import TRADE_TYPE_BUY_CLOSE, TRADE_TYPE_BUY_OPEN, TRADE_TYPE_SELL_CLOSE, TRADE_TYPE_SELL_OPEN
+from api.model.order import ORDER_STATUS_NONE, ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED
+from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
 
 
 class BaseStrategy:
@@ -227,10 +230,6 @@ class BaseStrategy:
         下单或者平仓
         :return:
         """
-        orders = copy.copy(self.orders)
-        if len(orders) > 0:
-            return
-
         # 判断装填和数量是否相等
         if self.long_status == 0 and self.short_status == 0:
             return
@@ -247,14 +246,14 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action="BUY",  price=price, quantity=amount)
+                    ret = await self.create_order(action=ORDER_ACTION_BUY,  price=price, quantity=amount)
 
             elif self.long_trade_size < position.long_quantity:  # 开多减仓
                 amount = position.long_quantity - self.long_trade_size
                 if abs(amount) >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action="SELL", price=price, quantity=amount)
+                    ret = await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=amount)
 
         if self.short_status == 1:  # 开空
             if self.short_trade_size > position.short_quantity:  # 开空加仓
@@ -262,26 +261,26 @@ class BaseStrategy:
                 if amount >= self.min_volume:
                     price = self.last_price * (1 - self.price_offset)
                     price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action="SELL", price=price, quantity=-amount)
+                    ret = await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=-amount)
 
             elif self.short_trade_size < position.short_quantity:  # 开空减仓
                 amount = position.short_quantity - self.short_trade_size
                 if abs(amount) >= self.min_volume:
                     price = self.last_price * (1 + self.price_offset)
                     price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action="BUY", price=price, quantity=-amount)
+                    ret = await self.create_order(action=ORDER_ACTION_BUY, price=price, quantity=-amount)
 
         if self.long_status == -1:  # 平多
             if position.long_quantity > 0:
                 price = self.last_price * (1 - self.price_offset)
                 price = round_to(price, self.price_tick)
-                ret = await self.create_order(action="SELL", price=price, quantity=position.long_quantity)
+                ret = await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=position.long_quantity)
 
         if self.short_status == -1:  # 平空
             if position.short_quantity > 0:
                 price = self.last_price * (1 + self.price_offset)
                 price = round_to(price, self.price_tick)
-                ret = await self.create_order(action="BUY", price=price, quantity=-position.short_quantity)
+                ret = await self.create_order(action=ORDER_ACTION_BUY, price=price, quantity=-position.short_quantity)
 
     async def create_order(self, action, price, quantity):
         if not self.test:
@@ -303,7 +302,7 @@ class BaseStrategy:
                                               price=price, quantity=quantity, **p)
             logger.info("action", action, "price:", price, "num:", quantity, "r:", self.lever_rate, "ret", caller=self)
         else:
-            if action == "BUY":
+            if action == ORDER_ACTION_BUY:
                 if quantity > 0:
                     self.position.long_quantity = self.position.long_quantity + quantity
                     logger.info("开多 price:", price, "amount:", self.position.long_quantity, "rate:", self.lever_rate,
@@ -312,7 +311,7 @@ class BaseStrategy:
                     self.position.short_quantity = self.position.short_quantity + quantity
                     logger.info("平空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
                                 caller=self)
-            if action == "SELL":
+            if action == ORDER_ACTION_SELL:
                 if quantity > 0:
                     self.position.long_quantity = self.position.long_quantity - quantity
                     logger.info("平多 price:", price, "amount:", self.position.long_quantity, "rate:", self.lever_rate,
@@ -353,10 +352,10 @@ class BaseStrategy:
             return True
 
         if self.trading_curb == "buy":  # 只加仓
-            if (action == "BUY" and quantity < 0) or (action == "SELL" and quantity > 0):
+            if (action == ORDER_ACTION_BUY and quantity < 0) or (action == ORDER_ACTION_SELL and quantity > 0):
                 return False
         if self.trading_curb == "sell":  # 只减仓
-            if (action == "BUY" and quantity > 0) or (action == "SELL" and quantity < 0):
+            if (action == ORDER_ACTION_BUY and quantity > 0) or (action == ORDER_ACTION_SELL and quantity < 0):
                 return False
 
         if self.trading_curb == "long" and quantity < 0:  # 只做多
@@ -367,16 +366,17 @@ class BaseStrategy:
 
     def limit_order(self, action, quantity):
         """
-        检查开多和开空的时间间隔是否太短 5s同一订单不下单
+        订单限制
         :param action:
         :param quantity:
         :return:
         """
+        # 检查开多和开空的时间间隔是否太短 5s同一订单不下单
         ut_time = tools.get_cur_timestamp_ms()
         long_or_short_order = None
-        if action == "BUY" and quantity > 0:  # 开多
+        if action == ORDER_ACTION_BUY and quantity > 0:  # 开多
             long_or_short_order = "long"
-        elif action == "SELL" and quantity < 0:  # 开空
+        elif action == ORDER_ACTION_SELL and quantity < 0:  # 开空
             long_or_short_order = "short"
         last_order_info = self.last_order.get(long_or_short_order)
         if last_order_info:
@@ -390,6 +390,25 @@ class BaseStrategy:
                 "ts": ut_time
             }
             self.last_order[long_or_short_order] = last__order_info
+
+        # 检查当前时候有该类型订单挂单了
+        if action == ORDER_ACTION_BUY:
+            if quantity > 0:
+                trade_type = TRADE_TYPE_BUY_OPEN
+            else:
+                trade_type = TRADE_TYPE_BUY_CLOSE
+        else:
+            if quantity > 0:
+                trade_type = TRADE_TYPE_SELL_CLOSE
+            else:
+                trade_type = TRADE_TYPE_SELL_OPEN
+        orders = copy.copy(self.orders)
+        for no in orders.values():
+            if no.symbol == self.symbol + "/" + self.trade_symbol:
+                if no.trade_type == trade_type and (no.status == ORDER_STATUS_NONE or no.status == ORDER_STATUS_SUBMITTED
+                                                    or no.status == ORDER_STATUS_PARTIAL_FILLED):
+                    logger.info("hand same order.", no.symbol, no.trade_type, no.status, caller=self)
+                    return False
         return True
 
     def save_file(self):
