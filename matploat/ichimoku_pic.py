@@ -46,21 +46,23 @@ class MatPlot:
             df["delay_price"] = pd.Series(trend_util.move(df["close"].values.tolist(), -base_periods))
             curr_bar = df.iloc[-1]
             id_values = []
+            indexs = []
             for i in range(1, base_periods + 1):
+                indexs.append(size - 1 + i)
                 id_values.append(int(curr_bar["id"] + i * 5 * 60))
-            ids = {"id": pd.Series(id_values)}
+            ids = {"id": pd.Series(id_values, index=indexs)}
             df1 = pd.DataFrame(ids, columns=['id', 'open', 'high', 'low', 'close', 'vol', 'amount'])
-            df = df.append(df1)
+            df = df.append(df1, sort=False)
             df["leada"] = pd.Series(trend_util.move(df["leada"].values.tolist(), base_periods))
             df["leadb"] = pd.Series(trend_util.move(df["leadb"].values.tolist(), base_periods))
             df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount', 'delay_price', 'conversion', 'base', 'leada', 'leadb']]
             df = df.rename(columns={"id": "date"})
             df["date"] = pd.to_datetime(df["date"], unit="s")
             df.set_index(["date"], inplace=True)
-            MatPlot.show(df, symbol, period, size)
+            MatPlot.show(df)
 
     @classmethod
-    def show(cls, df, symbol, period="1min", time_periods=[9, 26, 52]):
+    def show(cls, df):
         """
         :param symbol:
         :param period:

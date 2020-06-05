@@ -74,5 +74,5 @@ def move(data, offset):
         for j in range(0, offset):
             new_data[j] = np.nan
         new_data[offset:i+offset] = data[0:i]
-        return new_data
+        return new_data[0:i]
 
