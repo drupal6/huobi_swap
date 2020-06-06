@@ -24,6 +24,7 @@ from api.model.error import Error
 from api.model.order import TRADE_TYPE_BUY_CLOSE, TRADE_TYPE_BUY_OPEN, TRADE_TYPE_SELL_CLOSE, TRADE_TYPE_SELL_OPEN
 from api.model.order import ORDER_STATUS_NONE, ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED
 from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
+from api.model.const import KILINE_PERIOD
 
 
 class BaseStrategy:
@@ -63,6 +64,7 @@ class BaseStrategy:
         self.price_offset = config.markets.get("price_offset")
         self.loop_interval = config.markets.get("loop_interval")
         self.order_cancel_time = config.markets.get("order_cancel_time")
+        self.auto_curb = config.markets.get("auto_curb")
         self.trading_curb = config.markets.get("trading_curb")
         self.long_position_weight_rate = config.markets.get("long_position_weight_rate")
         self.short_position_weight_rate = config.markets.get("short_position_weight_rate")
@@ -145,38 +147,58 @@ class BaseStrategy:
         else:
             self.request = HuobiRequest(host=self.host, access_key=self.access_key, secret_key=self.secret_key)
 
-        # 初始和监听市场数据
-        self.market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
-        self.market.add_sub(InitKlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
-                                         request=self.request, klines_max_size=self.klines_max_size))
-        self.market.add_sub(KlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
-                                     klines_max_size=self.klines_max_size))
-        self.market.add_sub(DepthSub(symbol=self.mark_symbol, step=self.step, depths=self.depths,
-                                     depths_max_size=self.depths_max_size))
-        self.market.add_sub(TradeSub(symbol=self.mark_symbol, trades=self.trades, trades_max_size=self.trades_max_size))
-        self.market.start()
-
-        # 初始和监听交易数据
-        self.trade = Trade(platform=self.platform, wss=self.wss, access_key=self.access_key, secret_key=self.secret_key,
-                           rest_api=self.request)
-        self.trade.add_sub(InitPositonSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
-                                          position=self.position))
-        self.trade.add_sub(PositonSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
-                                      position=self.position))
-        self.trade.add_sub(InitOrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
-                                        orders=self.orders,
-                                        request=self.request))
-        self.trade.add_sub(OrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol, orders=self.orders))
-        if self.platform == "swap":
-            self.trade.add_sub(InitAssetSub(symbol=self.trade_symbol, asset=self.assets))
-            self.trade.add_sub(AssetSub(symbol=self.trade_symbol, asset=self.assets))
-        else:
-            self.trade.add_sub(InitAssetSub(symbol=self.symbol, asset=self.assets))
-            self.trade.add_sub(AssetSub(symbol=self.symbol, asset=self.assets))
-
-        self.trade.start()
+        self.market = self.init_market()
+        self.trade = self.init_trade()
         # 运行周期
         LoopRunTask.register(self.on_ticker, self.loop_interval)
+
+    def init_market(self):
+        """
+        初始和监听交易数据
+        :return:
+        """
+        market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
+        market.add_sub(InitKlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
+                                    request=self.request, klines_max_size=self.klines_max_size))
+        market.add_sub(KlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
+                                klines_max_size=self.klines_max_size))
+        if self.auto_curb:
+            for period in KILINE_PERIOD:
+                if period == self.period:
+                    continue
+                market.add_sub(InitKlineSub(symbol=self.mark_symbol, period=period, klines=self.klines,
+                                            request=self.request, klines_max_size=self.klines_max_size))
+                market.add_sub(KlineSub(symbol=self.mark_symbol, period=period, klines=self.klines,
+                                        klines_max_size=self.klines_max_size))
+        market.add_sub(DepthSub(symbol=self.mark_symbol, step=self.step, depths=self.depths,
+                                depths_max_size=self.depths_max_size))
+        market.add_sub(TradeSub(symbol=self.mark_symbol, trades=self.trades, trades_max_size=self.trades_max_size))
+        market.start()
+        return market
+
+    def init_trade(self):
+        """
+        初始和监听市场数据
+        :return:
+        """
+        trade = Trade(platform=self.platform, wss=self.wss, access_key=self.access_key,
+                      secret_key=self.secret_key, rest_api=self.request)
+        trade.add_sub(InitPositonSub(platform=self.platform, symbol=self.symbol,
+                                     contract_type=self.trade_symbol, position=self.position))
+        trade.add_sub(PositonSub(platform=self.platform, symbol=self.symbol,
+                                 contract_type=self.trade_symbol, position=self.position))
+        trade.add_sub(InitOrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
+                                   orders=self.orders, request=self.request))
+        trade.add_sub(OrderSub(platform=self.platform, symbol=self.symbol,
+                               contract_type=self.trade_symbol, orders=self.orders))
+        if self.platform == "swap":
+            trade.add_sub(InitAssetSub(symbol=self.trade_symbol, asset=self.assets))
+            trade.add_sub(AssetSub(symbol=self.trade_symbol, asset=self.assets))
+        else:
+            trade.add_sub(InitAssetSub(symbol=self.symbol, asset=self.assets))
+            trade.add_sub(AssetSub(symbol=self.symbol, asset=self.assets))
+        trade.start()
+        return trade
 
     async def on_ticker(self, *args, **kwargs):
         before_state = await self.before_strategy()

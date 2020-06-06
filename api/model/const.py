@@ -1,18 +1,5 @@
 # -*- coding:utf-8 -*-
 
-"""
-some constants and global queues
 
-"""
-
-# Version
-VERSION = "1.0.0_200110_alpha"
-
-# Exchange Names
-HUOBI_SWAP = "huobi_swap"  # Huobi Swap https://huobiapi.github.io/docs/dm/v1/cn/#5ea2e0cde2
-HUOBI_DELIVERY = "huobi_delivery"
-
-# Market Types
-MARKET_TYPE_TRADE = "trade"
-MARKET_TYPE_ORDERBOOK = "orderbook"
-MARKET_TYPE_KLINE = "kline"
+KILINE_PERIOD = ["5min", "15min", "30min", "60min", "4hour", "1day"]
+CURB_PERIOD = [6, 5, 4, 3, 2, 1]

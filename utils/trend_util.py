@@ -1,39 +1,31 @@
 import talib
 import numpy as np
+from api.model.const import KILINE_PERIOD, CURB_PERIOD
 
 
 def trend(klines):
-    trend = ma_trend(klines) + ichimoku_trend(klines) + trade_trend()
-    return 0
+    trend = ma_trend(klines)
+    if trend > 0:
+        return "long"
+    elif trend < 0:
+        return "short"
+    else:
+        return None
 
 
-def ma_trend(klines, symbol, period, macd_periods=[12, 26, 9]):
-    """
-    1.DIF、DEA均为正，DIF向上突破DEA，买入信号参考。
-    2.DIF、DEA均为负，DIF向下跌破DEA，卖出信号参考。
-    3.DIF线与K线发生背离，行情可能出现反转信号。
-    4.DIF、DEA的值从正数变成负数，或者从负数变成正数并不是交易信号，因为它们落后于市场。
-    :param klines:
-    :param symbol:
-    :param period:
-    :param ema_periods:
-    :param macd_periods:
-    :return:
-    """
-    df = klines.get("market." + symbol + ".kline." + period)
-    if df:
-        df['macd'], df['signal'], df['hist'] = talib.MACD(df["close"], fastperiod=macd_periods[0],
-                                                                  slowperiod=macd_periods[1], signalperiod=macd_periods[2])
-    current_bar = df.iloc[-1]  # 最新的K线 Bar.
-    last_bar = df.iloc[-2]
-    if current_bar["macd"] > 0 and current_bar["signal"] > 0:
-        if current_bar["macd"] > current_bar["signal"] and last_bar["macd"] <= last_bar["macd"]:
-            return 1
-    if current_bar["macd"] < 0 and current_bar["signal"] < 0:
-        if current_bar["macd"] < current_bar["signal"] and last_bar["macd"] >= last_bar["macd"]:
-            return -1
-
-    return 0
+def ma_trend(klines, symbol):
+    w = 0
+    for index, period in KILINE_PERIOD:
+        df = klines.get("market." + symbol + ".kline." + period)
+        df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
+                                                        slowperiod=16, signalperiod=9)
+        d = 0
+        if df["ma"] > df["signal"]:
+            d = 1
+        else:
+            d = -1
+        w += CURB_PERIOD * d
+    return w
 
 
 def ichimoku_trend(klines, symbol, period, time_periods=[9, 26, 52]):
