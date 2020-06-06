@@ -26,6 +26,9 @@ def initialize():
     elif strategy == "ProfitStrategy":
         from strategy.profit_strategy import ProfitStrategy
         return ProfitStrategy()
+    elif strategy == "MACDStrategy":
+        from strategy.macd_strategy import MACDStrategy
+        return MACDStrategy()
     else:
         e = Error(strategy + " not exit.")
         exit(0)

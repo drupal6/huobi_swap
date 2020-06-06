@@ -28,6 +28,8 @@ class QuantificationStrategy1(BaseStrategy):
         self.grids = deque(maxlen=10)  # 记录价格在网格中的位置
         self.close_position_rate = 5  # 平仓价格倍数
         self.margin_num_limit = 4  # 最少网格要求
+        self.low_price = None
+        self.high_price = None
         super(QuantificationStrategy1, self).__init__()
         self.load_file()
 
@@ -84,7 +86,10 @@ class QuantificationStrategy1(BaseStrategy):
             df["min_low"] = talib.MIN(df["low"], self.klines_max_size)
             current_bar = df.iloc[-1]
             atr = current_bar["close"] * self.atr_per / self.lever_rate
-            num = math.floor((current_bar["max_high"] - current_bar["min_low"])/atr)
+            if self.low_price and self.high_price:
+                num = math.floor((self.high_price - self.low_price)/atr)
+            else:
+                num = math.floor((current_bar["max_high"] - current_bar["min_low"])/atr)
             if num < self.margin_num_limit:  # 网格太少
                 return
             self.atr = atr

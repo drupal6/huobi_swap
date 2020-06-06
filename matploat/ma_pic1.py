@@ -32,30 +32,7 @@ class MatPlot:
             data = success.get("data")
             df = pd.DataFrame(data, columns={"id": 0, 'vol': 1, 'count': 2, 'open': 3, 'close': 4, 'low': 5,
                                                        'high': 6, 'amount': 7})
-
-            df["conversion_min"] = talib.MIN(df["low"], conversion_periods)
-            df["conversion_max"] = talib.MAX(df["high"], conversion_periods)
-            df["conversion"] = (df["conversion_min"] + df["conversion_max"]) / 2
-            df["base_min"] = talib.MIN(df["low"], base_periods)
-            df["base_max"] = talib.MAX(df["high"], base_periods)
-            df["base"] = (df["base_min"] + df["base_max"]) / 2
-            df["leada"] = (df["conversion"] + df["base"]) / 2
-            df["leadb_min"] = talib.MIN(df["low"], lagging_span2_periods)
-            df["leadb_max"] = talib.MAX(df["high"], lagging_span2_periods)
-            df["leadb"] = (df["leadb_min"] + df["leadb_max"]) / 2
-            df["delay_price"] = pd.Series(trend_util.move(df["close"].values.tolist(), -base_periods))
-            curr_bar = df.iloc[-1]
-            id_values = []
-            indexs = []
-            for i in range(1, base_periods + 1):
-                indexs.append(size - 1 + i)
-                id_values.append(int(curr_bar["id"] + i * 5 * 60))
-            ids = {"id": pd.Series(id_values, index=indexs)}
-            df1 = pd.DataFrame(ids, columns=['id', 'open', 'high', 'low', 'close', 'vol', 'amount'])
-            df = df.append(df1, sort=False)
-            df["leada"] = pd.Series(trend_util.move(df["leada"].values.tolist(), base_periods))
-            df["leadb"] = pd.Series(trend_util.move(df["leadb"].values.tolist(), base_periods))
-            df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount', 'delay_price', 'conversion', 'base', 'leada', 'leadb']]
+            df = df[['id', 'open', 'high', 'low', 'close', 'vol', 'amount']]
             df = df.rename(columns={"id": "date"})
             df["date"] = pd.to_datetime(df["date"], unit="s")
             df.set_index(["date"], inplace=True)
@@ -71,12 +48,10 @@ class MatPlot:
         """
 
         scale = 100
-        delay_price = df["delay_price"]
-        conversion = df["conversion"]
-        base = df["base"]
-        leada = df["leada"]
-        leadb = df["leadb"]
-        close = df["close"]
+        df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12, slowperiod=16, signalperiod=9)
+        mas = df["ma"]
+        signals = df["signal"]
+        hists = df["hist"]
 
         # 设置画布，纵向排列的三个子图
         fig, ax = plt.subplots(1, 1)
@@ -88,13 +63,10 @@ class MatPlot:
         # 调整子图的间距，hspace表示高(height)方向的间距
         # 设置第一子图的y轴信息及标题
         ax.set_ylabel('Close price in ￥')
-        ax.set_title('A_Stock %s ichimoku Indicator' % ("test"))
-        delay_price.plot(ax=ax, color='g', lw=1., legend=True, use_index=False)
-        conversion.plot(ax=ax, color='r', lw=1., legend=True, use_index=False)
-        base.plot(ax=ax, color='b', lw=1., legend=True, use_index=False)
-        leada.plot(ax=ax, color='y', lw=1., legend=True, use_index=False)
-        leadb.plot(ax=ax, color='k', lw=1., legend=True, use_index=False)
-        close.plot(ax=ax, color='c', lw=1., legend=True, use_index=False)
+        ax.set_title('A_Stock %s MACD' % ("test"))
+        mas.plot(ax=ax, color='g', lw=1., legend=True, use_index=False)
+        signals.plot(ax=ax, color='r', lw=1., legend=True, use_index=False)
+        # hists.plot(ax=ax, color='b', lw=1., legend=True, use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         interval = scale // 20
@@ -111,8 +83,8 @@ class MatPlot:
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "ETH-USD"
-    p = "5min"
-    c = 1000
+    p = "60min"
+    c = 100
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
     loop.close()

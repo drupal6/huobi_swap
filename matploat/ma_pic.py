@@ -148,8 +148,8 @@ class MatPlot:
 
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
-    s = "BTC-USD"
-    p = "5min"
+    s = "BSV-USD"
+    p = "30min"
     c = 300
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
