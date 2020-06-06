@@ -231,11 +231,13 @@ class BaseStrategy:
         :return:
         """
         # 判断装填和数量是否相等
-        if self.long_status == 0 and self.short_status == 0:
-            return
         if self.long_status == 1 and self.long_trade_size < self.min_volume:
-            return
+            self.long_status = 0
+            self.long_trade_size = 0
         if self.short_status == 1 and self.short_trade_size < self.min_volume:
+            self.short_status = 0
+            self.short_trade_size = 0
+        if self.long_status == 0 and self.short_status == 0:
             return
         self.long_trade_size = self.long_trade_size * self.long_position_weight_rate
         self.short_trade_size = self.short_trade_size * self.short_position_weight_rate

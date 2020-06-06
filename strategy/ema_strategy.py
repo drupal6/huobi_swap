@@ -20,13 +20,13 @@ class EmaStrategy(BaseStrategy):
         current_bar = df.iloc[-1]  # 最新的K线 Bar.
         last_bar = df.iloc[-2]
         if current_bar["fast_ema"] > current_bar["slow_ema"] and last_bar["fast_ema"] <= last_bar["slow_ema"]:
-            self.long_status == 1
+            self.long_status = 1
             self.long_trade_size = self.min_volume
-            self.short_status == -1
+            self.short_status = -1
 
         if current_bar["fast_ema"] < current_bar["slow_ema"] and last_bar["fast_ema"] >= last_bar["slow_ema"]:
-            self.long_status == -1
-            self.short_status == 1
+            self.long_status = -1
+            self.short_status = 1
             self.short_trade_size = self.min_volume
 
 

@@ -21,14 +21,14 @@ class MACDStrategy(BaseStrategy):
         current_bar = df.iloc[-1]  # 最新的K线 Bar.
         last_bar = df.iloc[-2]
         if current_bar["ma"] > current_bar["signal"] and last_bar["ma"] <= last_bar["signal"]:
-            self.long_status == 1
+            self.long_status = 1
             self.long_trade_size = self.min_volume
-            self.short_status == -1
+            self.short_status = -1
             logger.info("开多平空", self.last_price, caller=self)
-
-        if current_bar["ma"] < current_bar["signal"] and last_bar["ma"] >= last_bar["signal"]:
-            self.long_status == -1
-            self.short_status == 1
+        else:
+        # if current_bar["ma"] < current_bar["signal"] and last_bar["ma"] >= last_bar["signal"]:
+            self.long_status = -1
+            self.short_status = 1
             self.short_trade_size = self.min_volume
             logger.info("开空平多", self.last_price, caller=self)
 
