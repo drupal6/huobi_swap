@@ -11,7 +11,6 @@ import asyncio
 from utils import logger
 from utils.config import config
 
-from api.model.const import VERSION
 
 
 class Quant:
@@ -51,7 +50,7 @@ class Quant:
     def _get_version(self):
         """ get software version
         """
-        logger.info("version:", VERSION, caller=self)
+        logger.info("version:", "1.0.0", caller=self)
 
     def _get_event_loop(self):
         """ Get a main io loop. """

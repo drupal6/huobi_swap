@@ -25,6 +25,7 @@ from api.model.order import TRADE_TYPE_BUY_CLOSE, TRADE_TYPE_BUY_OPEN, TRADE_TYP
 from api.model.order import ORDER_STATUS_NONE, ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED
 from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
 from api.model.const import KILINE_PERIOD
+from utils import trend_util
 
 
 class BaseStrategy:
@@ -219,8 +220,13 @@ class BaseStrategy:
                     else:
                         await self.trade.revoke_order(self.symbol.upper(), self.trade_symbol, no.order_no)
 
-        if len(self.klines) == 0:  # k线数据没有
-            return False
+        # 检查k是否初始完了
+        if self.auto_curb:
+            if len(self.klines) != len(KILINE_PERIOD):  # k线数据没有
+                return False
+        else:
+            if len(self.klines) != 1:  # k线数据没有
+                return False
         if len(self.trades) == 0:  # 最近成交记录没有
             return False
         if not self.position.init:
@@ -238,6 +244,13 @@ class BaseStrategy:
             self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
         if self.last_price <= 0:  # 最近一次的成交价格没有
             return False
+
+        # 设置trade_curb
+        if self.auto_curb:
+            new_curb = trend_util.trend(copy.copy(self.klines), self.mark_symbol)
+            if self.trading_curb != new_curb:
+                self.trading_curb = new_curb
+                self.save_file()
         return True
 
     def strategy_handle(self):
@@ -375,6 +388,13 @@ class BaseStrategy:
         if self.trading_curb == "none":  # 都能下单
             return True
 
+        if self.trading_curb == "limitlongbuy":  #不能开多单
+            if action == ORDER_ACTION_BUY and quantity > 0:
+                return False
+        if self.trading_curb == "limitshortbuy":  #不能开空单
+            if action == ORDER_ACTION_SELL and quantity < 0:
+                return False
+
         if self.trading_curb == "buy":  # 只加仓
             if (action == ORDER_ACTION_BUY and quantity < 0) or (action == ORDER_ACTION_SELL and quantity > 0):
                 return False
@@ -442,7 +462,8 @@ class BaseStrategy:
         pass
 
     def e_g(self):
-        return "tc=[none, long, short, sell, buy, lock]\nlr=long_position_weight_rate\nsr=short_position_weight_rate"
+        return "tc=[none, long, short, sell, buy, lock, limitlongbuy, limitshortbuy]\nlr=long_position_weight_rate\n" \
+               "sr=short_position_weight_rate\n"
 
     def show(self):
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \

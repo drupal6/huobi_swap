@@ -1,31 +1,37 @@
 import talib
+from utils import logger
 import numpy as np
 from api.model.const import KILINE_PERIOD, CURB_PERIOD
 
 
-def trend(klines):
-    trend = ma_trend(klines)
+def trend(klines, symbol):
+    trend, price = ma_trend(klines, symbol)
+    logger.info("trend:", trend, "price:", price)
     if trend > 0:
-        return "long"
+        return "limitshortbuy"
     elif trend < 0:
-        return "short"
+        return "limitlongbuy"
     else:
-        return None
+        return "lock"
 
 
 def ma_trend(klines, symbol):
     w = 0
-    for index, period in KILINE_PERIOD:
+    price = None
+    for index, period in enumerate(KILINE_PERIOD):
         df = klines.get("market." + symbol + ".kline." + period)
         df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
                                                         slowperiod=16, signalperiod=9)
         d = 0
-        if df["ma"] > df["signal"]:
+        curr_bar = df.iloc[-1]
+        if curr_bar["ma"] > curr_bar["signal"]:
             d = 1
         else:
             d = -1
-        w += CURB_PERIOD * d
-    return w
+        if not price:
+            price = curr_bar["close"]
+        w = w + CURB_PERIOD[index] * d
+    return w, price
 
 
 def ichimoku_trend(klines, symbol, period, time_periods=[9, 26, 52]):
