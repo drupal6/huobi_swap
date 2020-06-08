@@ -71,6 +71,21 @@ class HuobiSwapRequest:
         success, error = await self.request("GET", uri, params=params)
         return success, error
 
+    async def get_trades(self, contract_type, size=2000):
+        """
+        获取交易历史数据
+        :param contract_type:仅支持大写， "BTC-USD"
+        :param size:[1,2000]
+        :return:
+        """
+        uri = "/swap-ex/market/history/trade"
+        params = {
+            "contract_code": contract_type,
+            "size": size
+        }
+        success, error = await self.request("GET", uri, params=params)
+        return success, error
+
     async def get_price_limit(self, contract_code=None):
         """ Get swap price limit.
 

@@ -1,5 +1,9 @@
 from utils import tools
 from utils.dingding import DingTalk
+from api.model.const import TRADE
+from collections import deque
+from utils.config import config
+import copy
 
 
 class TradeRecordNode:
@@ -20,60 +24,62 @@ class TradeRecordNode:
             self.sell_price = price
 
     def __str__(self):
-        t = tools.get_cur_datetime_m(fmt='%Y-%m-%d %H:%M:%S')
         symbol = self.symbol
         buy = "%.8f" % self.buy
         buy_price = "%.8f" % self.buy_price
         sell = "%.8f" % self.sell
         sell_price = "%.8f" % self.sell_price
-        return "%s\nsymbol:%s\nbuy:%s\nsell:%s\nbuy price:%s\nsell price:%s" % (t, symbol, buy, sell, buy_price, sell_price)
+        return "%s\nsymbol:%s\nperiod:%s\nbuy:%s\nsell:%s\nbuy price:%s\nsell price:%s" \
+               % (self.t, symbol, config.markets.get("period"), buy, sell, buy_price, sell_price)
 
 
 class Record:
 
     def __init__(self):
-        self.trade_data = {}
+        self.trade_data = deque(maxlen=10)
         self.last_notice_time = 0
+        self.notice_period = 10 * 60 * 1000
+        self.init = False
+        self.period = config.markets.get("period")
 
-    def record_trade(self, symbol, tick):
+    def record_trade(self, symbol, tick, init=False):
+        if not self.init and not init:
+            return
+        if TRADE[self.period] < self.notice_period:
+            self.notice_period = TRADE[self.period]
         direction = tick.get("direction")
         quantity = tick.get("amount")
         price = tick.get("price")
-        ts = int(tick.get("ts")/1000)
-        t = tools.ts_to_datetime_str(ts=ts, fmt="%Y-%m-%d")
-        trade_list = self.trade_data.get(symbol)
-        if not trade_list:
-            trade_list = list()
-            self.trade_data[symbol] = trade_list
+        ts = tools.ts_to_datetime_str(int(tick.get("ts") / TRADE[self.period]) * TRADE[self.period] / 1000)
+
         trn = None
-        if len(trade_list) == 0:
-            trn = TradeRecordNode(t, symbol)
-            trade_list.append(trn)
-        else:
-            trn = trade_list[-1]
-        if trn.t != t:
-            trn = TradeRecordNode(t, symbol)
-            trade_list.append(trn)
+        if len(self.trade_data) > 0:
+            trn = self.trade_data[-1]
+            if trn.t != ts:
+                trn = None
+        if not trn:
+            trn = TradeRecordNode(ts, symbol)
+            self.trade_data.append(trn)
         trn.add(direction, quantity, price)
+        self.notice()
 
     def notice(self):
         notice = True
         if self.last_notice_time > 0:
             ut_time = tools.get_cur_timestamp_ms()
-            if self.last_notice_time + 10 * 60 * 1000 > ut_time:
+            if self.last_notice_time + self.notice_period > ut_time:
                 notice = False
         if not notice:
             return
         self.last_notice_time = tools.get_cur_timestamp_ms()
-        msg = ""
-        for k, v in self.trade_data.items():
-            msg = msg + "\n"
-            if len(v) > 0:
-                trn = v[-1]
-                msg = msg + trn.__str__()
-            else:
-                msg += k + " not trade data."
-        DingTalk.send_text_msg(content=msg)
+        if len(self.trade_data) > 0:
+            msg = self.trade_data[-1].__str__()
+            DingTalk.send_text_msg(content=msg)
+
+    def trade_recode_node(self):
+        if len(self.trade_data) == 0:
+            return None
+        return copy.copy(self.trade_data[-1])
 
 
 record = Record()

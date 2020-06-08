@@ -12,6 +12,7 @@ from api.huobi.sub.order_sub import OrderSub
 from api.huobi.sub.init_order_sub import InitOrderSub
 from api.huobi.sub.init_asset_sub import InitAssetSub
 from api.huobi.sub.init_position_sub import InitPositonSub
+from api.huobi.sub.init_trade_sub import InitTradeSub
 from api.model.trade import Trade
 from api.model.asset import Asset
 from api.model.position import Position
@@ -173,6 +174,7 @@ class BaseStrategy:
                                         klines_max_size=self.klines_max_size))
         market.add_sub(DepthSub(symbol=self.mark_symbol, step=self.step, depths=self.depths,
                                 depths_max_size=self.depths_max_size))
+        market.add_sub(InitTradeSub(symbol=self.mark_symbol, request=self.request))
         market.add_sub(TradeSub(symbol=self.mark_symbol, trades=self.trades, trades_max_size=self.trades_max_size))
         market.start()
         return market

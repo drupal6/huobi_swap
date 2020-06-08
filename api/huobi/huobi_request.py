@@ -91,6 +91,21 @@ class HuobiRequest:
         success, error = await self.request("GET", uri, params=params)
         return success, error
 
+    async def get_trades(self, contract_type, size=150):
+        """
+        获取交易历史数据
+        :param contract_type:如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
+        :param size:[1,2000]
+        :return:
+        """
+        uri = "/market/history/trade"
+        params = {
+            "contract_code": contract_type,
+            "size": size
+        }
+        success, error = await self.request("GET", uri, params=params)
+        return success, error
+
     async def get_price_limit(self, symbol=None, contract_type=None, contract_code=None):
         """
         获取荷叶最高限价和最低限价

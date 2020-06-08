@@ -2,11 +2,19 @@ import talib
 from utils import logger
 import numpy as np
 from api.model.const import KILINE_PERIOD, CURB_PERIOD
+from utils.recordutil import record
 
 
 def trend(klines, symbol):
     trend, price = ma_trend(klines, symbol)
-    logger.info("trend:", trend, "price:", price)
+    trade_record_node = record.trade_recode_node()
+    if trade_record_node:
+        log_str = "trend:%s price:%s other:%s buy:%s sell:%s diff:%s" % \
+                  (trend, price, (trend / price) * 1000, trade_record_node.buy, trade_record_node.sell,
+                   (trade_record_node.buy - trade_record_node.sell))
+    else:
+        log_str = "trend:%s price:%s other:%s buy:%s sell:%s diff:%s" % (trend, price, (trend / price) * 1000, None, None, None)
+    logger.info(log_str)
     if trend > 0:
         return "limitshortbuy"
     elif trend < 0:
