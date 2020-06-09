@@ -47,7 +47,6 @@ def load_json(filename: str):
     """
     file_path = get_file_path(filename)
 
-    print(file_path)
     if file_path.exists():
         with open(file_path, mode="r", encoding="UTF-8") as f:
             data = json.load(f)
@@ -71,3 +70,13 @@ def save_json(filename: str, data: dict):
             ensure_ascii=False
         )
     f.close()
+
+
+def load_file(filename: str):
+    file_path = get_file_path(filename)
+    lines = None
+    if file_path.exists():
+        with open(file_path, mode="r", encoding="UTF-8") as f:
+            lines = f.readlines()
+        f.close()
+    return lines

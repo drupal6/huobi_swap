@@ -72,9 +72,11 @@ class Record:
         if not notice:
             return
         self.last_notice_time = tools.get_cur_timestamp_ms()
-        if len(self.trade_data) > 0:
-            msg = self.trade_data[-1].__str__()
-            DingTalk.send_text_msg(content=msg)
+        trn = self.trade_recode_node()
+        if not trn:
+            return
+        msg = trn.__str__()
+        DingTalk.send_text_msg(content=msg)
 
     def trade_recode_node(self):
         if len(self.trade_data) == 0:
