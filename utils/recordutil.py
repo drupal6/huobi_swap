@@ -1,6 +1,6 @@
 from utils import tools
 from utils.dingding import DingTalk
-from api.model.const import TRADE
+from api.model.const import TRADE, KILINE_PERIOD
 from collections import deque
 from utils.config import config
 import copy
@@ -79,7 +79,19 @@ class Record:
     def trade_recode_node(self):
         if len(self.trade_data) == 0:
             return None
-        return copy.copy(self.trade_data[-1])
+        trn1 = copy.copy(self.trade_data[-1])
+        merge = False
+        if KILINE_PERIOD.index(self.period) < 4:
+            merge = True
+        if merge and len(self.trade_data) > 1:
+            trn2 = copy.copy(self.trade_data[-2])
+            trn = TradeRecordNode(trn2.t, trn2.symbol)
+            trn.buy = trn1.buy + trn2.buy
+            trn.sell = trn1.sell + trn2.sell
+            trn.sell_price = trn1.sell_price
+            trn.buy_price = trn1.buy_price
+            return trn
+        return copy.copy(trn1)
 
 
 record = Record()
