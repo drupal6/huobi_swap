@@ -31,8 +31,8 @@ class MatPlot:
                 sell = float(strs[9][5:])
                 diff = float(strs[10][5:])
                 data.append({"Date": t, "trend": trend, "price": price, "other": other, "buy": buy, "sell": sell, "diff": diff})
-
         df = pd.DataFrame(data, columns={"Date": 0, 'trend': 1, 'price': 2, 'other': 3, 'buy': 4, 'sell': 5, 'diff': 6})
+        df["zero"] = 0
         df.set_index(["Date"], inplace=True)
         MatPlot.show(df)
 
@@ -44,6 +44,7 @@ class MatPlot:
         price_values = df["price"]
         trend_values = df["trend"]
         diff_values = df["diff"]
+        zero_values = df["zero"]
 
         # 设置画布，纵向排列的三个子图
         fig, ax = plt.subplots(3, 1)
@@ -63,9 +64,11 @@ class MatPlot:
         # 应用同步缩放
         ax[1] = plt.subplot(312, sharex=ax[0])
         trend_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        zero_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         ax[2] = plt.subplot(313, sharex=ax[0])
         diff_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        zero_values.plot(ax=ax[2], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         interval = scale // 20
