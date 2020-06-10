@@ -46,5 +46,6 @@ class InitTradeSub(BaseSub):
             for tick in datas["data"]:
                 record.record_trade(symbol=_symbol, tick=tick, init=True)
         record.init = True
+        record.notice()
 
 

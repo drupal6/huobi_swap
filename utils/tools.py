@@ -32,6 +32,7 @@ def get_cur_datetime_m(fmt='%Y%m%d%H%M%S%f'):
     str_m = today.strftime(fmt)
     return str_m
 
+
 def date_str_to_dt(date_str=None, fmt='%Y%m%d', delta_day=0):
     """ 日期字符串转换到datetime对象
     @param date_str 日期字符串

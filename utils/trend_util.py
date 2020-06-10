@@ -7,7 +7,7 @@ from utils.recordutil import record
 
 def trend(klines, symbol):
     trend, price = ma_trend(klines, symbol)
-    trade_record_node = record.trade_recode_node()
+    trade_record_node = record.trade_record_node()
     if trade_record_node:
         log_str = "trend:%s price:%s other:%s buy:%s sell:%s diff:%s" % \
                   (trend, price, (trend / price) * 1000, trade_record_node.buy, trade_record_node.sell,

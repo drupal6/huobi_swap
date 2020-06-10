@@ -1,13 +1,14 @@
 from utils import tools
 from utils.dingding import DingTalk
-from api.model.const import TRADE, KILINE_PERIOD
+from api.model.const import TRADE
 from collections import deque
 from utils.config import config
 import copy
 
 
 class TradeRecordNode:
-    def __init__(self, t, symbol):
+    def __init__(self, ts, t, symbol):
+        self.ts = ts
         self.t = t
         self.symbol = symbol
         self.buy = 0
@@ -23,6 +24,12 @@ class TradeRecordNode:
             self.sell += quantity
             self.sell_price = price
 
+    def dell(self, direction, quantity):
+        if direction.lower() == "buy":
+            self.buy -= quantity
+        elif direction.lower() == "sell":
+            self.sell -= quantity
+
     def __str__(self):
         symbol = self.symbol
         buy = "%.8f" % self.buy
@@ -34,34 +41,57 @@ class TradeRecordNode:
 
 
 class Record:
-
     def __init__(self):
-        self.trade_data = deque(maxlen=10)
+        self.init = False
+        self.trade_data = deque()
+        self.record_node = None
+        self.period = None
+        self.period_ts = None
         self.last_notice_time = 0
         self.notice_period = 10 * 60 * 1000
-        self.init = False
-        self.period = config.markets.get("period")
 
     def record_trade(self, symbol, tick, init=False):
+        if not self.period:
+            self.period = config.markets.get("period")
+            self.period_ts = TRADE[self.period]
+            if self.period_ts < self.notice_period:
+                self.notice_period = TRADE[self.period]
+
         if not self.init and not init:
             return
-        if TRADE[self.period] < self.notice_period:
-            self.notice_period = TRADE[self.period]
+        curr_ts = tools.get_cur_timestamp_ms()
+        ts = int(tick.get("ts"))
+        if ts + self.period_ts < curr_ts:
+            return
+        t = tools.ts_to_datetime_str(int(ts / TRADE[self.period]) * TRADE[self.period] / 1000)
+        if not self.record_node:
+            self.record_node = TradeRecordNode(ts, t, symbol)
         direction = tick.get("direction")
         quantity = tick.get("amount")
         price = tick.get("price")
-        ts = tools.ts_to_datetime_str(int(tick.get("ts") / TRADE[self.period]) * TRADE[self.period] / 1000)
+        self.record_node.add(direction, quantity, price)
+        self.trade_data.append(tick)
 
-        trn = None
-        if len(self.trade_data) > 0:
-            trn = self.trade_data[-1]
-            if trn.t != ts:
-                trn = None
-        if not trn:
-            trn = TradeRecordNode(ts, symbol)
-            self.trade_data.append(trn)
-        trn.add(direction, quantity, price)
+        if self.init and len(self.trade_data) > 0:
+            delete = False
+            ts = int(self.trade_data[0]["ts"])
+            while (ts + self.period_ts) < curr_ts and len(self.trade_data) > 0:
+                delete = True
+                old_tick = self.trade_data.popleft()
+                old_direction = old_tick.get("direction")
+                old_quantity = old_tick.get("amount")
+                self.record_node.dell(old_direction, old_quantity)
+                ts = int(self.trade_data[0]["ts"])
+            if delete:
+                t = tools.ts_to_datetime_str(int(ts / TRADE[self.period]) * TRADE[self.period] / 1000)
+                self.record_node.ts = ts
+                self.record_node.t = t
         self.notice()
+
+    def trade_record_node(self):
+        if self.record_node:
+            return copy.copy(self.record_node)
+        return None
 
     def notice(self):
         notice = True
@@ -72,28 +102,9 @@ class Record:
         if not notice:
             return
         self.last_notice_time = tools.get_cur_timestamp_ms()
-        trn = self.trade_recode_node()
-        if not trn:
-            return
-        msg = trn.__str__()
-        DingTalk.send_text_msg(content=msg)
-
-    def trade_recode_node(self):
-        if len(self.trade_data) == 0:
-            return None
-        trn1 = copy.copy(self.trade_data[-1])
-        merge = False
-        if KILINE_PERIOD.index(self.period) < 4:
-            merge = True
-        if merge and len(self.trade_data) > 1:
-            trn2 = copy.copy(self.trade_data[-2])
-            trn = TradeRecordNode(trn2.t, trn2.symbol)
-            trn.buy = trn1.buy + trn2.buy
-            trn.sell = trn1.sell + trn2.sell
-            trn.sell_price = trn1.sell_price
-            trn.buy_price = trn1.buy_price
-            return trn
-        return copy.copy(trn1)
+        if self.record_node:
+            msg = self.record_node.__str__()
+            DingTalk.send_text_msg(content=msg)
 
 
 record = Record()
