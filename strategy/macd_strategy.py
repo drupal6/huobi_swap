@@ -30,7 +30,7 @@ class MACDStrategy(BaseStrategy):
         for index, period in enumerate(KILINE_PERIOD):
             df = klines.get("market." + self.mark_symbol + ".kline." + period)
             df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
-                                                            slowperiod=16, signalperiod=9)
+                                                            slowperiod=26, signalperiod=9)
             curr_bar = df.iloc[-1]
             last_bar = df.iloc[-2]
             curr_d = curr_bar["ma"] - curr_bar["signal"]

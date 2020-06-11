@@ -32,7 +32,7 @@ def ma_trend(klines, symbol, select_period):
     for index, period in enumerate(KILINE_PERIOD):
         df = klines.get("market." + symbol + ".kline." + period)
         df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
-                                                        slowperiod=16, signalperiod=9)
+                                                        slowperiod=26, signalperiod=9)
         curr_bar = df.iloc[-1]
         d = curr_bar["ma"] - curr_bar["signal"]
         if period == select_period:
