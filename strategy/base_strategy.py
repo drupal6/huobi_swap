@@ -246,13 +246,6 @@ class BaseStrategy:
             self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
         if self.last_price <= 0:  # 最近一次的成交价格没有
             return False
-
-        # 设置trade_curb
-        if self.auto_curb:
-            new_curb = trend_util.trend(copy.copy(self.klines), self.mark_symbol, self.period)
-            if self.trading_curb != new_curb:
-                self.trading_curb = new_curb
-                self.save_file()
         return True
 
     def strategy_handle(self):

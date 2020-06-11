@@ -8,6 +8,7 @@ import math
 from collections import deque
 from utils import fileutil
 from utils import logger
+from utils import trend_util
 
 
 class QuantificationStrategy1(BaseStrategy):
@@ -128,6 +129,14 @@ class QuantificationStrategy1(BaseStrategy):
     def strategy_handle(self):
         klines = copy.copy(self.klines)
         position = copy.copy(self.position)
+
+        # 设置trade_curb
+        if self.auto_curb:
+            new_curb = trend_util.trend(klines, self.mark_symbol, self.period)
+            if self.trading_curb != new_curb:
+                self.trading_curb = new_curb
+                self.save_file()
+
         df = klines.get("market." + self.mark_symbol + ".kline." + self.period)
         self.reset_bank(df)
         if self.atr == 0:
