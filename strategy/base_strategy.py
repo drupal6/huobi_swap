@@ -249,7 +249,7 @@ class BaseStrategy:
 
         # 设置trade_curb
         if self.auto_curb:
-            new_curb = trend_util.trend(copy.copy(self.klines), self.mark_symbol)
+            new_curb = trend_util.trend(copy.copy(self.klines), self.mark_symbol, self.period)
             if self.trading_curb != new_curb:
                 self.trading_curb = new_curb
                 self.save_file()

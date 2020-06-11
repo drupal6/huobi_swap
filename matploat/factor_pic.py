@@ -19,7 +19,7 @@ class MatPlot:
     @classmethod
     def get_data(cls):
         data = []
-        lines = fileutil.load_file("../../logs/btc-config.out")
+        lines = fileutil.load_file("../../logs/btc-config.out1")
         for line in lines:
             if "trend:" in line and line.startswith("I"):
                 strs = line.rstrip().split(" ")

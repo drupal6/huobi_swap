@@ -18,6 +18,10 @@ def make_zip(config):
             continue
         if parent.endswith("file"):
             continue
+        if parent.endswith("logs"):
+            continue
+        if parent.endswith("trader"):
+            continue
         if parent.__contains__("\\logs\\"):
             continue
         for filename in filenames:
