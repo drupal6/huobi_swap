@@ -49,6 +49,7 @@ class Record:
         self.period_ts = None
         self.last_notice_time = 0
         self.notice_period = 10 * 60 * 1000
+        self.dingding = False
 
     def record_trade(self, symbol, tick, init=False):
         if not self.period:
@@ -94,6 +95,8 @@ class Record:
         return None
 
     def notice(self):
+        if not self.dingding:
+            return
         notice = True
         if self.last_notice_time > 0:
             ut_time = tools.get_cur_timestamp_ms()

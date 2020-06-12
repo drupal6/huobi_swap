@@ -26,7 +26,7 @@ from api.model.order import TRADE_TYPE_BUY_CLOSE, TRADE_TYPE_BUY_OPEN, TRADE_TYP
 from api.model.order import ORDER_STATUS_NONE, ORDER_STATUS_SUBMITTED, ORDER_STATUS_PARTIAL_FILLED
 from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
 from api.model.const import KILINE_PERIOD
-from utils import trend_util
+from utils.recordutil import record
 
 
 class BaseStrategy:
@@ -458,27 +458,34 @@ class BaseStrategy:
 
     def e_g(self):
         return "tc=[none, long, short, sell, buy, lock, limitlongbuy, limitshortbuy]\nlr=long_position_weight_rate\n" \
-               "sr=short_position_weight_rate\n"
+               "sr=short_position_weight_rate\ndd=[0, 1]"
 
     def show(self):
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
-               "long_fixed_position=%s\nshort_fixed_position=%s" % \
+               "long_fixed_position=%s\nshort_fixed_position=%s\ndingding=%s" % \
                (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate,
-                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0))
+                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0), record.dingding)
 
     def set_param(self, key, value):
         msg = None
         if key == "tc":
             self.trading_curb = value
             msg = "trading_curb=%s" % self.trading_curb
+            self.save_file()
         if key == "lr":
             self.long_position_weight_rate = int(value)
             msg = "long_position_weight_rate=%s" % self.long_position_weight_rate
+            self.save_file()
         if key == "sr":
             self.short_position_weight_rate = int(value)
             msg = "short_position_weight_rate=%s" % self.short_position_weight_rate
-        if msg:
             self.save_file()
+        if key == "dd":
+            if value == "0":
+                record.dingding = False
+            else:
+                record.dingding = True
+            msg = "dingding=%s" % record.dingding
         return msg
 
 
