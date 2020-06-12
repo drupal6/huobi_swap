@@ -1,11 +1,12 @@
 import talib
 from strategy.base_strategy import BaseStrategy
 import copy
+import numpy as np
 
 
 class EmaStrategy(BaseStrategy):
     """
-    移动平均线策略
+    macd
     """
 
     def __init__(self):
@@ -14,20 +15,21 @@ class EmaStrategy(BaseStrategy):
     def strategy_handle(self):
         klines = copy.copy(self.klines)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
-        df['fast_ema'] = talib.EMA(df['close'], timeperiod=self.fast_ema_window)
-        df['slow_ema'] = talib.EMA(df['close'], timeperiod=self.slow_ema_window)
+        df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
+                                                        slowperiod=26, signalperiod=9)
 
         current_bar = df.iloc[-1]  # 最新的K线 Bar.
         last_bar = df.iloc[-2]
-        if current_bar["fast_ema"] > current_bar["slow_ema"] and last_bar["fast_ema"] <= last_bar["slow_ema"]:
-            self.long_status = 1
-            self.long_trade_size = self.min_volume
-            self.short_status = -1
-
-        if current_bar["fast_ema"] < current_bar["slow_ema"] and last_bar["fast_ema"] >= last_bar["slow_ema"]:
-            self.long_status = -1
-            self.short_status = 1
-            self.short_trade_size = self.min_volume
+        if current_bar["ma"] < 0 and last_bar["signal"] < 0:
+            if current_bar["ma"] > current_bar["signal"] and last_bar["ma"] <= last_bar["signal"]:
+                self.long_status = 1
+                self.long_trade_size = self.min_volume
+                self.short_status = -1
+        if current_bar["ma"] > 0 and last_bar["signal"] > 0:
+            if current_bar["ma"] < current_bar["signal"] and last_bar["ma"] >= last_bar["signal"]:
+                self.long_status = -1
+                self.short_status = 1
+                self.short_trade_size = self.min_volume
 
 
 

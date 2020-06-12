@@ -42,10 +42,11 @@ class MatPlot:
     @classmethod
     def show(cls, df):
         scale = 100
-        df = df[0:500]
         price_values = df["price"]
         trend_values = df["trend"]
         diff_values = df["diff"]
+        buy_values = df["buy"]
+        sell_values = df["sell"]
         zero_values = df["zero"]
         hist_values = df["hist"]
 
@@ -71,6 +72,8 @@ class MatPlot:
 
         ax[2] = plt.subplot(413, sharex=ax[0])
         diff_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        buy_values.plot(ax=ax[2], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
+        sell_values.plot(ax=ax[2], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
         zero_values.plot(ax=ax[2], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         ax[3] = plt.subplot(414, sharex=ax[0])

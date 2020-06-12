@@ -462,9 +462,10 @@ class BaseStrategy:
 
     def show(self):
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
-               "long_fixed_position=%s\nshort_fixed_position=%s\ndingding=%s" % \
+               "long_fixed_position=%s\nshort_fixed_position=%s\ndingding=%s\nstrategy=%s" % \
                (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate,
-                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0), record.dingding)
+                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0),
+                record.dingding, config.markets.get("strategy"))
 
     def set_param(self, key, value):
         msg = None
