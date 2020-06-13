@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+from collections import deque
+from utils import sigle_linear_regression_util
 import talib
 # 图形参数控制
 import pylab as pl
@@ -31,24 +33,35 @@ class MatPlot:
                 sell = float(strs[9][5:])
                 diff = float(strs[10][5:])
                 hist = float(strs[11][5:])
-                data.append({"Date": t, "trend": trend, "price": price, "other": other, "buy": buy, "sell": sell, "diff": diff, "hist": hist})
-        df = pd.DataFrame(data, columns={"Date": 0, 'trend': 1, 'price': 2, 'other': 3, 'buy': 4, 'sell': 5, 'diff': 6, 'hist': 7})
-        df["zero"] = 0
+                data.append({"Date": t, "trend": trend, "price": price, "other": other, "buy": buy, "sell": sell,
+                             "diff": diff, "hist": hist, "leading": np.nan, "b": np.nan, "zero":0})
+        df = pd.DataFrame(data, columns={"Date": 0, 'trend': 1, 'price': 2, 'other': 3, 'buy': 4, 'sell': 5, 'diff': 6,
+                                         'hist': 7, 'leading': 8, 'b': 9, 'zero': 10})
         df.set_index(["Date"], inplace=True)
         MatPlot.show(df)
 
-
-
     @classmethod
     def show(cls, df):
-        scale = 100
+        df["sma"] = talib.SMA(df["price"], timeperiod=5)
+        df_lenght = len(df)
+        period = 12
+        x_x = np.arange(0, period, 1)
+        y_d = deque(maxlen=period)
+        for i in range(0, df_lenght):
+            if df.iloc[i]["sma"] == np.nan:
+                continue
+            if len(y_d) == period and i < df_lenght:
+                leading_y, b = sigle_linear_regression_util.leading_y(x_x, y_d)
+                df.iloc[i, 7] = leading_y
+                df.iloc[i, 8] = b
+            y_d.append(df.iloc[i]["sma"])
         price_values = df["price"]
+        leading_values = df["leading"]
         trend_values = df["trend"]
         diff_values = df["diff"]
-        buy_values = df["buy"]
-        sell_values = df["sell"]
         zero_values = df["zero"]
         hist_values = df["hist"]
+        b_values = df["b"]
 
         # 设置画布，纵向排列的三个子图
         fig, ax = plt.subplots(4, 1)
@@ -64,6 +77,7 @@ class MatPlot:
         ax[0].set_ylabel('Close price in ￥')
         ax[0].set_title('A_Stock %s MACD Indicator' % ("test"))
         price_values.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
+        leading_values.plot(ax=ax[0], color='r', lw=1., legend=True, use_index=False)
 
         # 应用同步缩放
         ax[1] = plt.subplot(412, sharex=ax[0])
@@ -72,14 +86,15 @@ class MatPlot:
 
         ax[2] = plt.subplot(413, sharex=ax[0])
         diff_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
-        buy_values.plot(ax=ax[2], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
-        sell_values.plot(ax=ax[2], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
         zero_values.plot(ax=ax[2], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        b_values.plot(ax=ax[3], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         ax[3] = plt.subplot(414, sharex=ax[0])
         hist_values.plot(ax=ax[3], color='r', kind='bar', legend=True, sharex=ax[0])
+        b_values.plot(ax=ax[3], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
+        scale = 100
         interval = scale // 20
         # 设置x轴参数，应用间隔设置
         # 时间序列转换，(否则日期默认会显示时分秒数据00:00:00)
