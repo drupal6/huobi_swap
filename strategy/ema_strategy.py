@@ -23,7 +23,6 @@ class EmaStrategy(BaseStrategy):
             self.long_rate = lr
         if sr > self.short_rate:
             self.short_rate = sr
-        print(">>>>", self.short_rate, self.long_rate)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
         df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
                                                         slowperiod=26, signalperiod=9)
