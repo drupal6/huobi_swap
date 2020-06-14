@@ -16,6 +16,14 @@ class EmaStrategy(BaseStrategy):
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
+        position = copy.copy(self.position)
+        lr = position.long_quantity / self.long_position_weight_rate
+        sr = position.short_quantity / self.short_position_weight_rate
+        if lr > self.long_rate:
+            self.long_rate = lr
+        if sr > self.short_rate:
+            self.short_rate = sr
+        print(">>>>", self.short_rate, self.long_rate)
         df = klines.get("market."+self.mark_symbol+".kline." + self.period)
         df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
                                                         slowperiod=26, signalperiod=9)
