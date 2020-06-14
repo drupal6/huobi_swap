@@ -26,6 +26,7 @@ class InitAssetSub(BaseSub):
 
     async def call_back(self, op, data):
         assets = {}
+        event = data["event"]
         for item in data["data"]:
             symbol = item["symbol"].upper()
             total = float(item["margin_balance"])
@@ -62,5 +63,6 @@ class InitAssetSub(BaseSub):
         self._asset.update = update
         self._asset.assets = assets
         self._asset.timestamp = data["ts"]
-        logger.info("init assets:", self._asset.__str__(), caller=self)
+        if event == "init":
+            logger.info("init assets:", self._asset.__str__(), caller=self)
 

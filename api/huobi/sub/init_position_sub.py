@@ -30,6 +30,7 @@ class InitPositonSub(BaseSub):
         return None
 
     async def call_back(self, topic, data):
+        event = data["event"]
         for position_info in data["data"]:
             if position_info["symbol"] != self._symbol.upper():
                 continue
@@ -53,5 +54,6 @@ class InitPositonSub(BaseSub):
                 self._position.short_avg_open_price = position_info["cost_open"]
             self._position.utime = int(data["ts"])
         self._position.init = True
-        logger.info("init position:", self._position.__str__(), caller=self)
+        if event == "init":
+            logger.info("init position:", self._position.__str__(), caller=self)
 

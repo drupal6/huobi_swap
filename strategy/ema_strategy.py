@@ -10,6 +10,8 @@ class EmaStrategy(BaseStrategy):
     """
 
     def __init__(self):
+        self.long_rate = 0
+        self.short_rate = 0
         super(EmaStrategy, self).__init__()
 
     def strategy_handle(self):
@@ -23,12 +25,18 @@ class EmaStrategy(BaseStrategy):
         if current_bar["ma"] < 0 and last_bar["signal"] < 0:
             if current_bar["ma"] > current_bar["signal"] and last_bar["ma"] <= last_bar["signal"]:
                 self.long_status = 1
+                self.long_rate = self.long_rate + 1
+                self.min_volume = self.min_volume * self.long_rate
                 self.long_trade_size = self.min_volume
                 self.short_status = -1
+                self.short_rate = 0
         if current_bar["ma"] > 0 and last_bar["signal"] > 0:
             if current_bar["ma"] < current_bar["signal"] and last_bar["ma"] >= last_bar["signal"]:
                 self.long_status = -1
+                self.long_rate = 0
                 self.short_status = 1
+                self.short_rate = self.short_rate + 1
+                self.min_volume = self.min_volume * self.short_rate
                 self.short_trade_size = self.min_volume
 
 
