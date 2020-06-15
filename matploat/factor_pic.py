@@ -9,6 +9,8 @@ import pylab as pl
 import numpy as np
 from utils import fileutil
 from datetime import datetime
+import json
+from api.model.const import KILINE_PERIOD
 mpl.use('TkAgg')
 pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
 pd.set_option('display.max_rows', 1000)  # 最多显示行数.
@@ -20,51 +22,53 @@ class MatPlot:
 
     @classmethod
     def get_data(cls):
-        data = []
+        pd_data = []
         lines = fileutil.load_file("../../logs/btc-config.out")
+        columns_title = {"Date": 0, 'zero': 1}
         for line in lines:
-            if "trend:" in line and line.startswith("I"):
-                strs = line.rstrip().split(" ")
-                t = strs[1][1:] + " " + strs[2][0:8]
-                trend = float(strs[5][6:])
-                price = float(strs[6][6:])
-                other = float(strs[7][6:])
-                buy = float(strs[8][4:])
-                sell = float(strs[9][5:])
-                diff = float(strs[10][5:])
-                hist = float(strs[11][5:])
-                data.append({"Date": t, "trend": trend, "price": price, "other": other, "buy": buy, "sell": sell,
-                             "diff": diff, "hist": hist, "leading": np.nan, "b": np.nan, "zero":0})
-        df = pd.DataFrame(data, columns={"Date": 0, 'trend': 1, 'price': 2, 'other': 3, 'buy': 4, 'sell': 5, 'diff': 6,
-                                         'hist': 7, 'leading': 8, 'b': 9, 'zero': 10})
+            if "[data]" in line:
+                strs = line.split("[data]")
+                date_str = strs[0].split("I [")[1].split(",")[0].rstrip().lstrip()
+                json_str = strs[1].rstrip().lstrip().replace("'", "\"")
+                data = json.loads(json_str)
+                append_data = {"Date": date_str, "zero": 0}
+                add_columns = len(columns_title) == 2
+                for period in KILINE_PERIOD:
+                    peroid_json = data[period]
+                    append_data[period + "_ma"] = peroid_json["ma"]
+                    append_data[period + "_signal"] = peroid_json["signal"]
+                    append_data[period + "_hist"] = peroid_json["hist"]
+                    append_data[period + "_close"] = peroid_json["close"]
+                    append_data[period + "_amount"] = peroid_json["amount"]
+                    append_data[period + "_buy"] = peroid_json["buy"]
+                    append_data[period + "_sell"] = peroid_json["sell"]
+                    if add_columns:
+                        columns_title[period + "_ma"] = len(columns_title)
+                        columns_title[period + "_signal"] = len(columns_title)
+                        columns_title[period + "_hist"] = len(columns_title)
+                        columns_title[period + "_close"] = len(columns_title)
+                        columns_title[period + "_amount"] = len(columns_title)
+                        columns_title[period + "_buy"] = len(columns_title)
+                        columns_title[period + "_sell"] = len(columns_title)
+                pd_data.append(append_data)
+        df = pd.DataFrame(pd_data, columns=columns_title)
         df.set_index(["Date"], inplace=True)
         MatPlot.show(df)
 
     @classmethod
     def show(cls, df):
-        df["sma"] = talib.SMA(df["price"], timeperiod=5)
-        df_lenght = len(df)
-        period = 12
-        x_x = np.arange(0, period, 1)
-        y_d = deque(maxlen=period)
-        for i in range(0, df_lenght):
-            if df.iloc[i]["sma"] == np.nan:
-                continue
-            if len(y_d) == period and i < df_lenght:
-                leading_y, b = sigle_linear_regression_util.leading_y(x_x, y_d)
-                df.iloc[i, 7] = leading_y
-                df.iloc[i, 8] = b
-            y_d.append(df.iloc[i]["sma"])
-        price_values = df["price"]
-        leading_values = df["leading"]
-        trend_values = df["trend"]
-        diff_values = df["diff"]
+        close_values = df["1min_close"]
+        hist_1min_values = df["1min_hist"]
+        hist_5min_values = df["5min_hist"]
+        hist_15min_values = df["15min_hist"]
+        hist_30min_values = df["30min_hist"]
+        hist_60min_values = df["60min_hist"]
+        hist_4hour_values = df["4hour_hist"]
+        hist_1day_values = df["1day_hist"]
         zero_values = df["zero"]
-        hist_values = df["hist"]
-        b_values = df["b"]
 
         # 设置画布，纵向排列的三个子图
-        fig, ax = plt.subplots(4, 1)
+        fig, ax = plt.subplots(2, 1)
 
         # 设置标签显示中文
         plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -76,22 +80,18 @@ class MatPlot:
         # 设置第一子图的y轴信息及标题
         ax[0].set_ylabel('Close price in ￥')
         ax[0].set_title('A_Stock %s MACD Indicator' % ("test"))
-        price_values.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
-        leading_values.plot(ax=ax[0], color='r', lw=1., legend=True, use_index=False)
+        close_values.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
 
         # 应用同步缩放
-        ax[1] = plt.subplot(412, sharex=ax[0])
-        trend_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
-
-        ax[2] = plt.subplot(413, sharex=ax[0])
-        diff_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[2], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
-        b_values.plot(ax=ax[3], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
-
-        ax[3] = plt.subplot(414, sharex=ax[0])
-        hist_values.plot(ax=ax[3], color='r', kind='bar', legend=True, sharex=ax[0])
-        b_values.plot(ax=ax[3], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        ax[1] = plt.subplot(212, sharex=ax[0])
+        hist_1min_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_5min_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_15min_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_30min_values.plot(ax=ax[1], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_60min_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_4hour_values.plot(ax=ax[1], color='m', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_1day_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
+        zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         scale = 100

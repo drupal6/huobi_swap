@@ -6,41 +6,39 @@ from utils.recordutil import record
 
 
 def trend(klines, symbol, setting_period):
-    trend, price, hist = ma_trend(klines, symbol, setting_period)
-    trade_record_node = record.trade_record_node()
-    if trade_record_node:
-        log_str = "trend:%s price:%s other:%s buy:%s sell:%s diff:%s hist:%s" % \
-                  (trend, price, (trend / price) * 1000, trade_record_node.buy, trade_record_node.sell,
-                   (trade_record_node.buy - trade_record_node.sell), hist)
-    else:
-        return
-    logger.info(log_str)
-    if trend > 0:
-        return "limitshortbuy"
-    elif trend < 0:
-        return "limitlongbuy"
-    else:
-        return "lock"
+    ma_trend(klines, symbol, setting_period)
+    return "lock"
 
 
 def ma_trend(klines, symbol, select_period):
-    w = 0
-    price = None
-    hist = None
-    max_weight = len(KILINE_PERIOD)
-    select_index = KILINE_PERIOD.index(select_period)
+    trade_record_node = record.trade_record_node()
+    if not trade_record_node:
+        return
+    data = {}
     for index, period in enumerate(KILINE_PERIOD):
         df = klines.get("market." + symbol + ".kline." + period)
         df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
                                                         slowperiod=26, signalperiod=9)
         curr_bar = df.iloc[-1]
-        d = curr_bar["ma"] - curr_bar["signal"]
-        if period == select_period:
-            price = curr_bar["close"]
-            hist = curr_bar["hist"]
-        w = w + d * (max_weight - abs(select_index - index))
-        # w = w + CURB_PERIOD[index] * d
-    return w, price, hist
+        ma = curr_bar["ma"]
+        signal = curr_bar["signal"]
+        hist = curr_bar["hist"]
+        close = curr_bar["close"]
+        amount = curr_bar["amount"]
+        buy = trade_record_node.buy
+        sell = trade_record_node.sell
+        d = {
+            "ma": ma,
+            "signal": signal,
+            "hist": hist,
+            "close": close,
+            "amount": amount,
+            "buy": buy,
+            "sell": sell,
+        }
+        data[period] = d
+    logger.info("[data]", data)
+
 
 
 def ichimoku_trend(klines, symbol, period, time_periods=[9, 26, 52]):
