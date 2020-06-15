@@ -58,6 +58,7 @@ class MatPlot:
     @classmethod
     def show(cls, df):
         close_values = df["1min_close"]
+        df["1min_hist"] = df["1min_hist"] + df["5min_hist"]
         hist_1min_values = df["1min_hist"]
         hist_5min_values = df["5min_hist"]
         hist_15min_values = df["15min_hist"]
@@ -85,13 +86,13 @@ class MatPlot:
         # 应用同步缩放
         ax[1] = plt.subplot(212, sharex=ax[0])
         hist_1min_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
-        hist_5min_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
-        hist_15min_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # hist_5min_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_15min_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
         hist_30min_values.plot(ax=ax[1], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
-        hist_60min_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
-        hist_4hour_values.plot(ax=ax[1], color='m', lw=1., legend=True, sharex=ax[0], use_index=False)
-        hist_1day_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # hist_60min_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # hist_4hour_values.plot(ax=ax[1], color='m', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # hist_1day_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         scale = 100
