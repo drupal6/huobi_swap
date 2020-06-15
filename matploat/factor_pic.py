@@ -41,8 +41,8 @@ class MatPlot:
                     append_data[period + "_hist"] = peroid_json["hist"]
                     append_data[period + "_close"] = peroid_json["close"]
                     append_data[period + "_amount"] = peroid_json["amount"]
-                    append_data[period + "_buy"] = peroid_json["buy"]
-                    append_data[period + "_sell"] = peroid_json["sell"]
+                    append_data[period + "_buy"] = float(peroid_json["buy"])
+                    append_data[period + "_sell"] = float(peroid_json["sell"])
                     if add_columns:
                         columns_title[period + "_ma"] = len(columns_title)
                         columns_title[period + "_signal"] = len(columns_title)
@@ -60,6 +60,8 @@ class MatPlot:
     def show(cls, df):
         df["total"] = df["1min_hist"] + df["5min_hist"] + df["15min_hist"] + df["30min_hist"] + df["60min_hist"] + df["4hour_hist"] + df["1day_hist"]
         df["buy_sell"] = df["1min_buy"] + df["1min_sell"]
+        df["buy_sell_ma"], df["buy_sell_signal"], df["buy_sell_hist"] = talib.MACD(np.array(df["buy_sell"]), fastperiod=12,
+                                                                                   slowperiod=26, signalperiod=9)
         close_values = df["1min_close"]
         hist_1min_values = df["1min_hist"]
         hist_5min_values = df["5min_hist"]
@@ -69,6 +71,7 @@ class MatPlot:
         hist_4hour_values = df["4hour_hist"]
         hist_1day_values = df["1day_hist"]
         buy_sell_values = df["buy_sell"]
+        buy_sell_hist = df["buy_sell_hist"]
         total_values = df["total"]
         zero_values = df["zero"]
 
@@ -100,7 +103,8 @@ class MatPlot:
         zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         ax[2] = plt.subplot(313, sharex=ax[0])
-        buy_sell_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        buy_sell_hist.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        zero_values.plot(ax=ax[2], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         scale = 100
