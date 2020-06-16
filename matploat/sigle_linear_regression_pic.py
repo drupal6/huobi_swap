@@ -43,7 +43,7 @@ class MatPlot:
     @classmethod
     def show(cls, df):
         df_lenght = len(df)
-        period = 12
+        period = 9
         x_x = np.arange(0, period, 1)
         y_d = deque(maxlen=period)
         for i in range(0, df_lenght):
@@ -51,7 +51,7 @@ class MatPlot:
                 leading_y, b = sigle_linear_regression_util.leading_y(x_x, y_d)
                 df.iloc[i, 5] = leading_y
                 df.iloc[i, 6] = b
-            y_d.append(df.iloc[i]["Sma"])
+            y_d.append(df.iloc[i]["Close"])
 
         price_values = df["Close"]
         b_values = df["b"]
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "BTC-USD"
     p = "5min"
-    c = 2000
+    c = 500
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
     loop.close()

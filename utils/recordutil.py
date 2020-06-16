@@ -2,7 +2,6 @@ from utils import tools
 from utils.dingding import DingTalk
 from api.model.const import TRADE
 from collections import deque
-from utils.config import config
 import copy
 
 
@@ -37,7 +36,7 @@ class TradeRecordNode:
         sell = "%.8f" % self.sell
         sell_price = "%.8f" % self.sell_price
         return "%s\nsymbol:%s\nperiod:%s\nbuy:%s\nsell:%s\nbuy price:%s\nsell price:%s" \
-               % (self.t, symbol, config.markets.get("period"), buy, sell, buy_price, sell_price)
+               % (self.t, symbol, "5min", buy, sell, buy_price, sell_price)
 
 
 class Record:
@@ -53,7 +52,7 @@ class Record:
 
     def record_trade(self, symbol, tick, init=False):
         if not self.period:
-            self.period = config.markets.get("period")
+            self.period = "5min"
             self.period_ts = TRADE[self.period]
             if self.period_ts < self.notice_period:
                 self.notice_period = TRADE[self.period]

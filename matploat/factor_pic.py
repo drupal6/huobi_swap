@@ -58,8 +58,7 @@ class MatPlot:
 
     @classmethod
     def show(cls, df):
-        df["total"] = df["1min_hist"] + df["5min_hist"] + df["15min_hist"] + df["30min_hist"] + df["60min_hist"] + df["4hour_hist"] + df["1day_hist"]
-        df["buy_sell"] = df["1min_buy"] + df["1min_sell"]
+        df["buy_sell"] = df["1min_buy"] - df["1min_sell"]
         df["buy_sell_ma"], df["buy_sell_signal"], df["buy_sell_hist"] = talib.MACD(np.array(df["buy_sell"]), fastperiod=12,
                                                                                    slowperiod=26, signalperiod=9)
         close_values = df["1min_close"]
@@ -72,7 +71,6 @@ class MatPlot:
         hist_1day_values = df["1day_hist"]
         buy_sell_values = df["buy_sell"]
         buy_sell_hist = df["buy_sell_hist"]
-        total_values = df["total"]
         zero_values = df["zero"]
 
         # 设置画布，纵向排列的三个子图
@@ -93,17 +91,16 @@ class MatPlot:
         # 应用同步缩放
         ax[1] = plt.subplot(312, sharex=ax[0])
         hist_1min_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
-        # hist_5min_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
+        hist_5min_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
         hist_15min_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
         hist_30min_values.plot(ax=ax[1], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
         # hist_60min_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
         # hist_4hour_values.plot(ax=ax[1], color='m', lw=1., legend=True, sharex=ax[0], use_index=False)
         # hist_1day_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
-        total_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
         zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         ax[2] = plt.subplot(313, sharex=ax[0])
-        buy_sell_hist.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        buy_sell_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
         zero_values.plot(ax=ax[2], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
