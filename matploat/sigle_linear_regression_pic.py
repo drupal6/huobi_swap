@@ -45,7 +45,6 @@ class MatPlot:
     def show(cls, df):
         df_lenght = len(df)
         period = 10
-
         y_d = deque(maxlen=period)
         for i in range(0, df_lenght):
             x_x = np.arange(df.iloc[i]["Close"], df.iloc[i]["Close"] + period * 1, 1)

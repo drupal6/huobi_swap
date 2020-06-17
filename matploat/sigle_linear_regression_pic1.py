@@ -63,29 +63,31 @@ class MatPlot:
 
     @classmethod
     def show(cls, df):
-        period = "1min"
+        period = "5min"
         df["hist"] = df["1min_hist"] + df["5min_hist"] + df["15min_hist"] + df["30min_hist"] + df["60min_hist"] \
                      + df["4hour_hist"] + df["1day_hist"]
         df_simple = df[['hist', period + '_close']]
-        X_train, X_test, Y_train, Y_test = train_test_split(df_simple.iloc[:, :2], df_simple[period + "_close"],
-                                                            train_size=.80)
-        print("原始数据特征:", df_simple.iloc[:, :3].shape,
+        df_simple = df_simple[0:300]
+        print(df_simple)
+        print(df_simple.corr())
+        X_train, X_test, Y_train, Y_test = train_test_split(df_simple.iloc[:, :1], df_simple[period + "_close"],
+                                                            train_size=.90)
+        print("原始数据特征:", df_simple.iloc[:, :2].shape,
               ",训练数据特征:", X_train.shape,
               ",测试数据特征:", X_test.shape)
 
         print("原始数据标签:", df_simple[period + "_close"].shape,
               ",训练数据标签:", Y_train.shape,
               ",测试数据标签:",Y_test.shape)
-
+        X_train = X_train.values.reshape(-1, 1)
         model = LinearRegression()
-        model.fit(X_test, Y_test)
+        model.fit(X_train, Y_train)
         a = model.intercept_
         b = model.coef_
         print(a, b)
         for i in range(0, len(df)):
             cur_bar = df.iloc[i]
-            df.iloc[i, 1] = a + b[0] * cur_bar["hist"] + b[1] * cur_bar[period + '_z']
-        print(df)
+            df.iloc[i, 1] = a + b[0] * cur_bar["hist"]
         df["buy_sell"] = df["1min_buy"] - df["1min_sell"]
         df["buy_sell_ma"], df["buy_sell_signal"], df["buy_sell_hist"] = talib.MACD(np.array(df["buy_sell"]), fastperiod=12,
                                                                                    slowperiod=26, signalperiod=9)
