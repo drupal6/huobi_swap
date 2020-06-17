@@ -33,9 +33,10 @@ class MatPlot:
             df = df.rename(
                 columns={"id": "Date", "open": "Open", "high": "High", "low": "Low", "close": "Close", "vol": "Volume"})
             df["Leading"] = np.nan
+            df["k"] = np.nan
             df["b"] = np.nan
             df["zero"] = 0
-            df["Sma"] = talib.SMA(df["Close"], timeperiod=5)
+            df["Sma"] = talib.SMA(df["Close"], timeperiod=10)
             df["Date"] = pd.to_datetime(df["Date"], unit="s")
             df.set_index(["Date"], inplace=True)
             MatPlot.show(df)
@@ -43,17 +44,20 @@ class MatPlot:
     @classmethod
     def show(cls, df):
         df_lenght = len(df)
-        period = 9
-        x_x = np.arange(0, period, 1)
+        period = 10
+
         y_d = deque(maxlen=period)
         for i in range(0, df_lenght):
+            x_x = np.arange(df.iloc[i]["Close"], df.iloc[i]["Close"] + period * 1, 1)
             if len(y_d) == period and i < df_lenght:
-                leading_y, b = sigle_linear_regression_util.leading_y(x_x, y_d)
+                leading_y, k, b = sigle_linear_regression_util.leading_y(x_x, y_d)
                 df.iloc[i, 5] = leading_y
-                df.iloc[i, 6] = b
-            y_d.append(df.iloc[i]["Close"])
+                df.iloc[i, 6] = k
+                df.iloc[i, 7] = b
+            y_d.append(df.iloc[i]["Sma"])
 
         price_values = df["Close"]
+        k_values = df["k"]
         b_values = df["b"]
         leading_values = df["Leading"]
         zero_values = df["zero"]
@@ -73,7 +77,8 @@ class MatPlot:
 
         # 应用同步缩放
         ax[1] = plt.subplot(212, sharex=ax[0])
-        b_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        k_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # b_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
         zero_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
@@ -93,7 +98,7 @@ if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "BTC-USD"
     p = "5min"
-    c = 500
+    c = 1000
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
     loop.close()

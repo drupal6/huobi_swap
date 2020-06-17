@@ -2,7 +2,7 @@
 
 
 def liner_fitting(data_x, data_y):
-    size = len(data_x);
+    size = len(data_x)
     i = 0
     sum_xy = 0
     sum_y = 0
@@ -38,4 +38,4 @@ def leading_y(x, y):
     :return:
     """
     parameter = liner_fitting(x, y)
-    return parameter[0] * (x[-1] + 1) + parameter[1], parameter[0]
+    return parameter[0] * (x[-1] + 1) + parameter[1], parameter[0], parameter[1]

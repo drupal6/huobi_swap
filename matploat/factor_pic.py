@@ -24,7 +24,7 @@ class MatPlot:
     @classmethod
     def get_data(cls):
         pd_data = []
-        lines = fileutil.load_file("../../logs/btc-config.out")
+        lines = fileutil.load_file("../../logs/btc-config4.out")
         columns_title = {"Date": 0, 'zero': 1}
         for line in lines:
             if "[data]" in line:
@@ -61,6 +61,8 @@ class MatPlot:
         df["buy_sell"] = df["1min_buy"] - df["1min_sell"]
         df["buy_sell_ma"], df["buy_sell_signal"], df["buy_sell_hist"] = talib.MACD(np.array(df["buy_sell"]), fastperiod=12,
                                                                                    slowperiod=26, signalperiod=9)
+        df["1min_hist"] = df["1min_hist"] + df["5min_hist"] + df["15min_hist"] + df["30min_hist"] + df["60min_hist"]
+        df["1min_hist"] = talib.SMA(df["1min_hist"], timeperiod=20)
         close_values = df["1min_close"]
         hist_1min_values = df["1min_hist"]
         hist_5min_values = df["5min_hist"]
@@ -93,7 +95,7 @@ class MatPlot:
         hist_1min_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
         hist_5min_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
         hist_15min_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
-        hist_30min_values.plot(ax=ax[1], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # hist_30min_values.plot(ax=ax[1], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
         # hist_60min_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
         # hist_4hour_values.plot(ax=ax[1], color='m', lw=1., legend=True, sharex=ax[0], use_index=False)
         # hist_1day_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
