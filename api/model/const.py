@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 
 
-KILINE_PERIOD = ["5min", "15min", "30min"]
-CURB_PERIOD = [7, 6, 5]
+KILINE_PERIOD = ["1min", "5min", "15min", "30min"]
+CURB_PERIOD = [7, 6, 5, 4]
 TRADE = {
     "1min":  60000,
     "5min": 300000,
