@@ -27,6 +27,8 @@ from api.model.order import ORDER_STATUS_NONE, ORDER_STATUS_SUBMITTED, ORDER_STA
 from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
 from api.model.const import KILINE_PERIOD
 from utils.recordutil import record
+import talib
+import numpy as np
 
 
 class BaseStrategy:
@@ -449,6 +451,35 @@ class BaseStrategy:
                     logger.info("hand same order.", no.symbol, no.trade_type, no.status, caller=self)
                     return False
         return True
+
+    def change_curb(self, klines):
+        if not self.auto_curb:
+            return
+        ma = 0
+        signal = 0
+        log_data = {}
+        for index, period in enumerate(KILINE_PERIOD):
+            df = klines.get("market.%s.kline.%s" % (self.mark_symbol, period))
+            df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
+                                                            slowperiod=26, signalperiod=9)
+            curr_bar = df.iloc[-1]
+            ma = ma + curr_bar["ma"]
+            signal = signal + curr_bar["signal"]
+            log_data[period + "_ma"] = curr_bar["ma"]
+            log_data[period + "_signal"] = curr_bar["signal"]
+        if ma == signal:
+            self.trading_curb = "lock"
+            self.save_file()
+        if ma > signal:
+            self.trading_curb = "limitshortbuy"
+            self.save_file()
+        if ma < signal:
+            self.trading_curb = "limitlongbuy"
+            self.save_file()
+        log_data["ma"] = ma
+        log_data["signal"] = signal
+        log_data["trading_curb"] = self.trading_curb
+        logger.info("change_curb:", log_data)
 
     def save_file(self):
         pass
