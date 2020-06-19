@@ -470,7 +470,7 @@ class BaseStrategy:
             log_data[period + "_ma"] = curr_bar["ma"]
             log_data[period + "_signal"] = curr_bar["signal"]
             if not close:
-                close = curr_bar[period + "_close"]
+                close = curr_bar["close"]
         if ma == signal:
             self.trading_curb = TradingCurb.LOCK.value
             self.save_file()
