@@ -459,6 +459,7 @@ class BaseStrategy:
         ma = 0
         signal = 0
         log_data = {}
+        close = None
         for index, period in enumerate(KILINE_PERIOD):
             df = klines.get("market.%s.kline.%s" % (self.mark_symbol, period))
             df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
@@ -468,6 +469,8 @@ class BaseStrategy:
             signal = signal + curr_bar["signal"]
             log_data[period + "_ma"] = curr_bar["ma"]
             log_data[period + "_signal"] = curr_bar["signal"]
+            if not close:
+                close = curr_bar[period + "_close"]
         if ma == signal:
             self.trading_curb = TradingCurb.LOCK.value
             self.save_file()
@@ -480,6 +483,7 @@ class BaseStrategy:
         log_data["ma"] = ma
         log_data["signal"] = signal
         log_data["trading_curb"] = self.trading_curb
+        log_data["close"] = close
         logger.info("change_curb:", log_data)
 
     def save_file(self):
