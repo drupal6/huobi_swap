@@ -29,6 +29,7 @@ from api.model.const import KILINE_PERIOD
 from utils.recordutil import record
 import talib
 import numpy as np
+from api.model.const import TradingCurb
 
 
 class BaseStrategy:
@@ -380,28 +381,28 @@ class BaseStrategy:
         :param quantity:
         :return:
         """
-        if self.trading_curb == "lock":  # 不能下单
+        if self.trading_curb == TradingCurb.LOCK.value:  # 不能下单
             return False
-        if self.trading_curb == "none":  # 都能下单
+        if self.trading_curb == TradingCurb.NONE.value:  # 都能下单
             return True
 
-        if self.trading_curb == "limitlongbuy":  #不能开多单
+        if self.trading_curb == TradingCurb.LIMITLONGBUY.value:  #不能开多单
             if action == ORDER_ACTION_BUY and quantity > 0:
                 return False
-        if self.trading_curb == "limitshortbuy":  #不能开空单
+        if self.trading_curb == TradingCurb.LIMITSHORTBUY.value:  #不能开空单
             if action == ORDER_ACTION_SELL and quantity < 0:
                 return False
 
-        if self.trading_curb == "buy":  # 只加仓
+        if self.trading_curb == TradingCurb.BUY.value:  # 只加仓
             if (action == ORDER_ACTION_BUY and quantity < 0) or (action == ORDER_ACTION_SELL and quantity > 0):
                 return False
-        if self.trading_curb == "sell":  # 只减仓
+        if self.trading_curb == TradingCurb.SELL.value:  # 只减仓
             if (action == ORDER_ACTION_BUY and quantity > 0) or (action == ORDER_ACTION_SELL and quantity < 0):
                 return False
 
-        if self.trading_curb == "long" and quantity < 0:  # 只做多
+        if self.trading_curb == TradingCurb.LONG.value and quantity < 0:  # 只做多
             return False
-        if self.trading_curb == "short" and quantity > 0:  # 只做空
+        if self.trading_curb == TradingCurb.SHORT.value and quantity > 0:  # 只做空
             return False
         return True
 
@@ -416,9 +417,9 @@ class BaseStrategy:
         ut_time = tools.get_cur_timestamp_ms()
         long_or_short_order = None
         if action == ORDER_ACTION_BUY and quantity > 0:  # 开多
-            long_or_short_order = "long"
+            long_or_short_order = TradingCurb.LONG.value
         elif action == ORDER_ACTION_SELL and quantity < 0:  # 开空
-            long_or_short_order = "short"
+            long_or_short_order = TradingCurb.SHORT.value
         last_order_info = self.last_order.get(long_or_short_order)
         if last_order_info:
             if last_order_info["action"] == action and last_order_info["quantity"] == quantity and \
@@ -468,13 +469,13 @@ class BaseStrategy:
             log_data[period + "_ma"] = curr_bar["ma"]
             log_data[period + "_signal"] = curr_bar["signal"]
         if ma == signal:
-            self.trading_curb = "lock"
+            self.trading_curb = TradingCurb.LOCK.value
             self.save_file()
         if ma > signal:
-            self.trading_curb = "limitshortbuy"
+            self.trading_curb = TradingCurb.LIMITSHORTBUY.value
             self.save_file()
         if ma < signal:
-            self.trading_curb = "limitlongbuy"
+            self.trading_curb = TradingCurb.LIMITLONGBUY.value
             self.save_file()
         log_data["ma"] = ma
         log_data["signal"] = signal
