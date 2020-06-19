@@ -135,7 +135,7 @@ class QuantificationStrategy(BaseStrategy):
         position = copy.copy(self.position)
 
         # 设置trade_curb
-        self.change_curb(klines)
+        self.change_curb(klines, position)
         # if self.auto_curb:
         #     new_curb = trend_util.trend(klines, self.mark_symbol, self.period)
         #     if self.trading_curb != new_curb:

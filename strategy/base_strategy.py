@@ -453,9 +453,11 @@ class BaseStrategy:
                     return False
         return True
 
-    def change_curb(self, klines):
+    def change_curb(self, klines, position):
         if not self.auto_curb:
             return
+        last_ma = 0
+        last_signal = 0
         ma = 0
         signal = 0
         log_data = {}
@@ -471,15 +473,26 @@ class BaseStrategy:
             log_data[period + "_signal"] = curr_bar["signal"]
             if not close:
                 close = curr_bar["close"]
-        if ma == signal:
-            self.trading_curb = TradingCurb.LOCK.value
-            self.save_file()
-        if ma > signal:
-            self.trading_curb = TradingCurb.LIMITSHORTBUY.value
-            self.save_file()
-        if ma < signal:
-            self.trading_curb = TradingCurb.LIMITLONGBUY.value
-            self.save_file()
+            last_bar = df.iloc[-2]
+            last_ma = last_ma + last_bar["ma"]
+            last_signal = last_signal + last_bar["signal"]
+        if position.long_quantity == 0 and position.short_quantity == 0:
+            if last_ma <= last_signal and ma > signal:
+                self.trading_curb = TradingCurb.LIMITSHORTBUY.value
+                self.save_file()
+            elif last_ma >= last_signal and ma < signal:
+                self.trading_curb = TradingCurb.LIMITLONGBUY.value
+                self.save_file()
+        else:
+            if ma == signal:
+                self.trading_curb = TradingCurb.LOCK.value
+                self.save_file()
+            if ma > signal:
+                self.trading_curb = TradingCurb.LIMITSHORTBUY.value
+                self.save_file()
+            if ma < signal:
+                self.trading_curb = TradingCurb.LIMITLONGBUY.value
+                self.save_file()
         log_data["ma"] = ma
         log_data["signal"] = signal
         log_data["trading_curb"] = self.trading_curb
