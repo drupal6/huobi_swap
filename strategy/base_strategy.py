@@ -512,8 +512,10 @@ class BaseStrategy:
         pass
 
     def e_g(self):
-        return "tc=[none, long, short, sell, buy, lock, limitlongbuy, limitshortbuy]\nlr=long_position_weight_rate\n" \
-               "sr=short_position_weight_rate\ndd=[0, 1]"
+        curbs = []
+        for curb in TradingCurb:
+            curbs.append(curb.value)
+        return "tc=" + str(curbs) + "\nlr=long_position_weight_rate\nsr=short_position_weight_rate\ndd=[0, 1]"
 
     def show(self):
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \

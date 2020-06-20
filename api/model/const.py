@@ -24,3 +24,4 @@ class TradingCurb(Enum):
     BUY = "buy"  # 只能加仓
     LIMITLONGBUY = "limitlongbuy"  # 不能开多仓
     LIMITSHORTBUY = "limitshortbuy"  # 不能开空仓
+
