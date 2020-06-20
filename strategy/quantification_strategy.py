@@ -205,7 +205,10 @@ class QuantificationStrategy(BaseStrategy):
         band_size = str(len(self.band))
         grid_str = str(self.grids[-1])
         curr_price = str(self.band[self.grids[-1]])
-        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s" % (msg, band_str, band_size, grid_str, curr_price)
+        atr = str(self.atr)
+        last_price = str(self.last_price)
+        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s\nlast_price:%s\natr:%s" % \
+               (msg, band_str, band_size, grid_str, curr_price, last_price, atr)
 
 
 
