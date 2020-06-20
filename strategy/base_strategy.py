@@ -73,6 +73,8 @@ class BaseStrategy:
         self.trading_curb = config.markets.get("trading_curb")
         self.long_position_weight_rate = config.markets.get("long_position_weight_rate")
         self.short_position_weight_rate = config.markets.get("short_position_weight_rate")
+        self.long_fixed_position = config.markets.get("long_fixed_position", 0)
+        self.short_fixed_position = config.markets.get("short_fixed_position", 0)
         self.platform = config.markets.get("platform")
 
         e = None
@@ -477,7 +479,8 @@ class BaseStrategy:
             last_ma = last_ma + last_bar["ma"]
             last_signal = last_signal + last_bar["signal"]
         save_file = False
-        if position.long_quantity == 0 and position.short_quantity == 0:
+        if position.long_quantity - self.long_fixed_position == 0 and \
+                position.short_quantity - self.short_fixed_position == 0:
             if last_ma <= last_signal and ma > signal:
                 self.trading_curb = TradingCurb.LIMITSHORTBUY.value
                 save_file = True
@@ -516,7 +519,7 @@ class BaseStrategy:
         return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
                "long_fixed_position=%s\nshort_fixed_position=%s\ndingding=%s\nstrategy=%s" % \
                (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate,
-                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0),
+                self.long_fixed_position, self.short_fixed_position,
                 record.dingding, config.markets.get("strategy"))
 
     def set_param(self, key, value):
