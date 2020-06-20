@@ -15,6 +15,8 @@ class HTTPHandler(BaseHTTPRequestHandler):
         # print(self.command)
         req_datas = self.rfile.read(int(self.headers['content-length']))
         req_data = json.loads(req_datas.decode())
+        if "text" not in req_data:
+            return
         req_param = req_data["text"]["content"].rstrip()
 
         if strategy:
