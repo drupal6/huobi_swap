@@ -28,7 +28,8 @@ class GridStrategy(BaseStrategy):
         self.atr_per = 0.05   # 最小网格高度要求
         self.min_index = -1  # 网格基准线位置
         self.grids = deque(maxlen=5)  # 记录价格在网格中的位置
-        self.close_position_rate = 10  # 平仓价格atr倍数
+        self.close_long_position_rate = 10  # 平多仓价格atr倍数
+        self.close_short_position_rate = 10  # 平空仓价格atr倍数
         self.margin_num_limit = 4  # 最少网格数量要求
         super(GridStrategy, self).__init__()
         self.load_file()
@@ -46,6 +47,8 @@ class GridStrategy(BaseStrategy):
             self.trading_curb = file_data.get("trading_curb")
             self.long_position_weight_rate = file_data.get("long_position_weight_rate")
             self.short_position_weight_rate = file_data.get("short_position_weight_rate")
+            self.close_long_position_rate = file_data.get("close_long_position_rate", self.close_long_position_rate)
+            self.close_short_position_rate = file_data.get("close_short_position_rate", self.close_short_position_rate)
             last_grid = file_data.get("last_grid")
             second_grid = file_data.get("second_grid")
             if second_grid:
@@ -64,6 +67,8 @@ class GridStrategy(BaseStrategy):
             "min_index": self.min_index,
             "long_position_weight_rate": self.long_position_weight_rate,
             "short_position_weight_rate": self.short_position_weight_rate,
+            "close_long_position_rate": self.close_long_position_rate,
+            "close_short_position_rate": self.close_short_position_rate,
             "trading_curb": self.trading_curb
         }
         if len(self.grids) > 0:
@@ -108,10 +113,10 @@ class GridStrategy(BaseStrategy):
             self.long_position_weight = []
             self.short_position_weight = []
             self.position_weight_label = []
-            self.price_margin.append(round_to((-(self.min_index + self.close_position_rate) * self.atr), self.price_tick))
+            self.price_margin.append(round_to((-(self.min_index + self.close_long_position_rate) * self.atr), self.price_tick))
             for i in range(0, num):
                 self.price_margin.append(round_to((i - self.min_index) * self.atr, self.price_tick))
-            self.price_margin.append(round_to(((self.min_index + self.close_position_rate) * self.atr), self.price_tick))
+            self.price_margin.append(round_to(((self.min_index + self.close_short_position_rate) * self.atr), self.price_tick))
             # df['olhc'] = df[["open", "close", "high", "low"]].mean(axis=1)
             std = np.std(df['close'])
             if std < 1:
