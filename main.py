@@ -17,9 +17,6 @@ def initialize():
     elif strategy == "QuantificationStrategy":
         from strategy.quantification_strategy import QuantificationStrategy
         return QuantificationStrategy()
-    elif strategy == "QuantificationStrategy1":
-        from strategy.quantification_strategy1 import QuantificationStrategy1
-        return QuantificationStrategy1()
     elif strategy == "IchimokuStrategy":
         from strategy.ichimoku_strategy import IchimokuStrategy
         return IchimokuStrategy()
@@ -29,6 +26,9 @@ def initialize():
     elif strategy == "MACDStrategy":
         from strategy.macd_strategy import MACDStrategy
         return MACDStrategy()
+    elif strategy == "GridStrategy":
+        from strategy.grid_strategy import GridStrategy
+        return GridStrategy()
     else:
         e = Error(strategy + " not exit.")
         exit(0)
@@ -39,7 +39,7 @@ def main():
     if len(sys.argv) > 1:
         config_file = sys.argv[1]
     else:
-        config_file = "config/eos-config.json"
+        config_file = "config/test/eth-config.json"
 
     quant.initialize(config_file)
     bs = initialize()

@@ -13,7 +13,7 @@ from utils import trend_util
 
 class QuantificationStrategy(BaseStrategy):
     """
-    网格策略
+    网格策略 计算atr
     """
 
     def __init__(self):
