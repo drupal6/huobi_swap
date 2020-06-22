@@ -515,12 +515,13 @@ class BaseStrategy:
         curbs = []
         for curb in TradingCurb:
             curbs.append(curb.value)
-        return "tc=" + str(curbs) + "\nlr=long_position_weight_rate\nsr=short_position_weight_rate\ndd=[0, 1]"
+        return "tc=" + str(curbs) + "\nlr=long_position_weight_rate\nsr=short_position_weight_rate\ndd=[0, 1]\n" \
+                                    "ac=[true, false]"
 
     def show(self):
-        return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
+        return "trading_curb=%s\nauto_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
                "long_fixed_position=%s\nshort_fixed_position=%s\ndingding=%s\nstrategy=%s" % \
-               (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate,
+               (self.trading_curb, self.auto_curb, self.long_position_weight_rate, self.short_position_weight_rate,
                 self.long_fixed_position, self.short_fixed_position,
                 record.dingding, config.markets.get("strategy"))
 
@@ -544,6 +545,12 @@ class BaseStrategy:
             else:
                 record.dingding = True
             msg = "dingding=%s" % record.dingding
+        if key == "ac":
+            if value == "false":
+                self.auto_curb = False
+            else:
+                self.auto_curb = True
+            msg = "auto_curb=%s" % self.auto_curb
         return msg
 
 
