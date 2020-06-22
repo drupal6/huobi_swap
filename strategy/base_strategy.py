@@ -27,6 +27,9 @@ from api.model.order import ORDER_STATUS_NONE, ORDER_STATUS_SUBMITTED, ORDER_STA
 from api.model.order import ORDER_ACTION_SELL, ORDER_ACTION_BUY
 from api.model.const import KILINE_PERIOD
 from utils.recordutil import record
+import talib
+import numpy as np
+from api.model.const import TradingCurb
 
 
 class BaseStrategy:
@@ -70,6 +73,8 @@ class BaseStrategy:
         self.trading_curb = config.markets.get("trading_curb")
         self.long_position_weight_rate = config.markets.get("long_position_weight_rate")
         self.short_position_weight_rate = config.markets.get("short_position_weight_rate")
+        self.long_fixed_position = config.markets.get("long_fixed_position", 0)
+        self.short_fixed_position = config.markets.get("short_fixed_position", 0)
         self.platform = config.markets.get("platform")
 
         e = None
@@ -378,28 +383,28 @@ class BaseStrategy:
         :param quantity:
         :return:
         """
-        if self.trading_curb == "lock":  # 不能下单
+        if self.trading_curb == TradingCurb.LOCK.value:  # 不能下单
             return False
-        if self.trading_curb == "none":  # 都能下单
+        if self.trading_curb == TradingCurb.NONE.value:  # 都能下单
             return True
 
-        if self.trading_curb == "limitlongbuy":  #不能开多单
+        if self.trading_curb == TradingCurb.LIMITLONGBUY.value:  #不能开多单
             if action == ORDER_ACTION_BUY and quantity > 0:
                 return False
-        if self.trading_curb == "limitshortbuy":  #不能开空单
+        if self.trading_curb == TradingCurb.LIMITSHORTBUY.value:  #不能开空单
             if action == ORDER_ACTION_SELL and quantity < 0:
                 return False
 
-        if self.trading_curb == "buy":  # 只加仓
+        if self.trading_curb == TradingCurb.BUY.value:  # 只加仓
             if (action == ORDER_ACTION_BUY and quantity < 0) or (action == ORDER_ACTION_SELL and quantity > 0):
                 return False
-        if self.trading_curb == "sell":  # 只减仓
+        if self.trading_curb == TradingCurb.SELL.value:  # 只减仓
             if (action == ORDER_ACTION_BUY and quantity > 0) or (action == ORDER_ACTION_SELL and quantity < 0):
                 return False
 
-        if self.trading_curb == "long" and quantity < 0:  # 只做多
+        if self.trading_curb == TradingCurb.LONG.value and quantity < 0:  # 只做多
             return False
-        if self.trading_curb == "short" and quantity > 0:  # 只做空
+        if self.trading_curb == TradingCurb.SHORT.value and quantity > 0:  # 只做空
             return False
         return True
 
@@ -414,9 +419,9 @@ class BaseStrategy:
         ut_time = tools.get_cur_timestamp_ms()
         long_or_short_order = None
         if action == ORDER_ACTION_BUY and quantity > 0:  # 开多
-            long_or_short_order = "long"
+            long_or_short_order = TradingCurb.LONG.value
         elif action == ORDER_ACTION_SELL and quantity < 0:  # 开空
-            long_or_short_order = "short"
+            long_or_short_order = TradingCurb.SHORT.value
         last_order_info = self.last_order.get(long_or_short_order)
         if last_order_info:
             if last_order_info["action"] == action and last_order_info["quantity"] == quantity and \
@@ -450,6 +455,56 @@ class BaseStrategy:
                     return False
         return True
 
+    def change_curb(self, klines, position):
+        if not self.auto_curb:
+            return
+        last_ma = 0
+        last_signal = 0
+        ma = 0
+        signal = 0
+        log_data = {}
+        close = None
+        for index, period in enumerate(KILINE_PERIOD):
+            df = klines.get("market.%s.kline.%s" % (self.mark_symbol, period))
+            df["ma"], df["signal"], df["hist"] = talib.MACD(np.array(df["close"]), fastperiod=12,
+                                                            slowperiod=26, signalperiod=9)
+            curr_bar = df.iloc[-1]
+            ma = ma + curr_bar["ma"]
+            signal = signal + curr_bar["signal"]
+            log_data[period + "_ma"] = curr_bar["ma"]
+            log_data[period + "_signal"] = curr_bar["signal"]
+            if not close:
+                close = curr_bar["close"]
+            last_bar = df.iloc[-2]
+            last_ma = last_ma + last_bar["ma"]
+            last_signal = last_signal + last_bar["signal"]
+        save_file = False
+        if position.long_quantity - self.long_fixed_position == 0 and \
+                position.short_quantity - self.short_fixed_position == 0:
+            if last_ma <= last_signal and ma > signal:
+                self.trading_curb = TradingCurb.LIMITSHORTBUY.value
+                save_file = True
+            elif last_ma >= last_signal and ma < signal:
+                self.trading_curb = TradingCurb.LIMITLONGBUY.value
+                save_file = True
+        else:
+            if ma == signal:
+                self.trading_curb = TradingCurb.LOCK.value
+                save_file = True
+            if ma > signal:
+                self.trading_curb = TradingCurb.LIMITSHORTBUY.value
+                save_file = True
+            if ma < signal:
+                self.trading_curb = TradingCurb.LIMITLONGBUY.value
+                save_file = True
+        if save_file:
+            self.save_file()
+        log_data["ma"] = ma
+        log_data["signal"] = signal
+        log_data["trading_curb"] = self.trading_curb
+        log_data["close"] = close
+        logger.info("change_curb:", log_data)
+
     def save_file(self):
         pass
 
@@ -457,14 +512,17 @@ class BaseStrategy:
         pass
 
     def e_g(self):
-        return "tc=[none, long, short, sell, buy, lock, limitlongbuy, limitshortbuy]\nlr=long_position_weight_rate\n" \
-               "sr=short_position_weight_rate\ndd=[0, 1]"
+        curbs = []
+        for curb in TradingCurb:
+            curbs.append(curb.value)
+        return "tc=" + str(curbs) + "\nlr=long_position_weight_rate\nsr=short_position_weight_rate\ndd=[0, 1]\n" \
+                                    "ac=[true, false]"
 
     def show(self):
-        return "trading_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
+        return "trading_curb=%s\nauto_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
                "long_fixed_position=%s\nshort_fixed_position=%s\ndingding=%s\nstrategy=%s" % \
-               (self.trading_curb, self.long_position_weight_rate, self.short_position_weight_rate,
-                config.markets.get("long_fixed_position", 0), config.markets.get("short_fixed_position", 0),
+               (self.trading_curb, self.auto_curb, self.long_position_weight_rate, self.short_position_weight_rate,
+                self.long_fixed_position, self.short_fixed_position,
                 record.dingding, config.markets.get("strategy"))
 
     def set_param(self, key, value):
@@ -487,6 +545,12 @@ class BaseStrategy:
             else:
                 record.dingding = True
             msg = "dingding=%s" % record.dingding
+        if key == "ac":
+            if value == "false":
+                self.auto_curb = False
+            else:
+                self.auto_curb = True
+            msg = "auto_curb=%s" % self.auto_curb
         return msg
 
 

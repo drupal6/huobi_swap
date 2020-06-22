@@ -11,27 +11,27 @@ from utils import logger
 from utils import trend_util
 
 
-class QuantificationStrategy1(BaseStrategy):
+class GridStrategy(BaseStrategy):
     """
     网格策略
     """
 
     def __init__(self):
-        self.file_path = "../file/QuantificationStrategy1_%s.json"
+        self.file_path = "../file/GridStrategy_%s.json"
         self.price_margin = []  # 设置网格价格
         self.long_position_weight = []  # 设置多网格的仓位
         self.short_position_weight = []  # 设置空网格的仓位
         self.position_weight_label = []  # 设置网格仓位标签
         self.band = []  # 网格价格
+        self.auto_atr = False  # 是否自动计算atr True是 False固定atr
         self.atr = 0  # 真实波幅
-        self.atr_per = 0.2   # 最小网格高度要求
-        self.min_index = -1  # 网格基准先位置
-        self.grids = deque(maxlen=10)  # 记录价格在网格中的位置
-        self.close_position_rate = 5  # 平仓价格倍数
-        self.margin_num_limit = 4  # 最少网格要求
-        self.low_price = None
-        self.high_price = None
-        super(QuantificationStrategy1, self).__init__()
+        self.atr_per = 0.05   # 最小网格高度要求
+        self.min_index = -1  # 网格基准线位置
+        self.grids = deque(maxlen=5)  # 记录价格在网格中的位置
+        self.close_long_position_rate = 10  # 平多仓价格atr倍数
+        self.close_short_position_rate = 10  # 平空仓价格atr倍数
+        self.margin_num_limit = 4  # 最少网格数量要求
+        super(GridStrategy, self).__init__()
         self.load_file()
 
     def load_file(self):
@@ -47,6 +47,8 @@ class QuantificationStrategy1(BaseStrategy):
             self.trading_curb = file_data.get("trading_curb")
             self.long_position_weight_rate = file_data.get("long_position_weight_rate")
             self.short_position_weight_rate = file_data.get("short_position_weight_rate")
+            self.close_long_position_rate = file_data.get("close_long_position_rate", self.close_long_position_rate)
+            self.close_short_position_rate = file_data.get("close_short_position_rate", self.close_short_position_rate)
             last_grid = file_data.get("last_grid")
             second_grid = file_data.get("second_grid")
             if second_grid:
@@ -65,6 +67,8 @@ class QuantificationStrategy1(BaseStrategy):
             "min_index": self.min_index,
             "long_position_weight_rate": self.long_position_weight_rate,
             "short_position_weight_rate": self.short_position_weight_rate,
+            "close_long_position_rate": self.close_long_position_rate,
+            "close_short_position_rate": self.close_short_position_rate,
             "trading_curb": self.trading_curb
         }
         if len(self.grids) > 0:
@@ -83,14 +87,21 @@ class QuantificationStrategy1(BaseStrategy):
             if len(open_orders) == 0 and position.short_quantity == 0 and position.long_quantity == 0:
                 reset = True
         if reset:
+            self.atr = 0
             df["max_high"] = talib.MAX(df["high"], self.klines_max_size)
             df["min_low"] = talib.MIN(df["low"], self.klines_max_size)
+            df["atr"] = talib.ATR(df["high"], df["low"], df["close"], 20)
             current_bar = df.iloc[-1]
-            atr = current_bar["close"] * self.atr_per / self.lever_rate
-            if self.low_price and self.high_price:
-                num = math.floor((self.high_price - self.low_price)/atr)
-            else:
-                num = math.floor((current_bar["max_high"] - current_bar["min_low"])/atr)
+            high = current_bar["max_high"]
+            low = current_bar["min_low"]
+            if self.auto_atr:  # 自动计算atr
+                atr = current_bar["atr"]
+                if current_bar["close"] * self.atr_per / self.lever_rate > atr:  # 网格高度达不到最小要求
+                    print("atr1:", (current_bar["close"] * self.atr_per / self.lever_rate), "atr:", atr)
+                    return
+            else:  # 设置固定的atr
+                atr = current_bar["close"] * self.atr_per / self.lever_rate
+            num = math.floor((high - low)/atr)
             if num < self.margin_num_limit:  # 网格太少
                 return
             self.atr = atr
@@ -102,11 +113,15 @@ class QuantificationStrategy1(BaseStrategy):
             self.long_position_weight = []
             self.short_position_weight = []
             self.position_weight_label = []
-            self.price_margin.append(round_to((-(self.min_index + self.close_position_rate) * self.atr), self.price_tick))
+            self.price_margin.append(round_to((-(self.min_index + self.close_long_position_rate) * self.atr), self.price_tick))
             for i in range(0, num):
                 self.price_margin.append(round_to((i - self.min_index) * self.atr, self.price_tick))
-            self.price_margin.append(round_to(((self.min_index + self.close_position_rate) * self.atr), self.price_tick))
-            band = np.mean(df['close']) + np.array(self.price_margin)  # 计算各个网格的价格
+            self.price_margin.append(round_to(((self.min_index + self.close_short_position_rate) * self.atr), self.price_tick))
+            # df['olhc'] = df[["open", "close", "high", "low"]].mean(axis=1)
+            std = np.std(df['close'])
+            if std < 1:
+                std = 1.1
+            band = np.mean(df['close']) + np.array(self.price_margin) * std  # 计算各个网格的价格
             self.band = band.tolist()
             for i in range(0, num):  # 做多的情况 计算网格仓位
                 if i == 0:
@@ -129,14 +144,8 @@ class QuantificationStrategy1(BaseStrategy):
     def strategy_handle(self):
         klines = copy.copy(self.klines)
         position = copy.copy(self.position)
-
-        # 设置trade_curb
-        if self.auto_curb:
-            new_curb = trend_util.trend(klines, self.mark_symbol, self.period)
-            if self.trading_curb != new_curb:
-                self.trading_curb = new_curb
-                self.save_file()
-
+        # 自动设置trade_curb
+        self.change_curb(klines, position)
         df = klines.get("market." + self.mark_symbol + ".kline." + self.period)
         self.reset_bank(df)
         if self.atr == 0:
@@ -178,7 +187,7 @@ class QuantificationStrategy1(BaseStrategy):
                 # 平多仓
                 if grid > 0:
                     grid = grid - 1
-                if position.long_quantity > self.long_position_weight[grid] * self.long_position_weight_rate:
+                if position.long_quantity - self.long_fixed_position > self.long_position_weight[grid] * self.long_position_weight_rate:
                     self.long_status = 1
                     self.long_trade_size = self.long_position_weight[grid]
                 return
@@ -190,14 +199,18 @@ class QuantificationStrategy1(BaseStrategy):
                 # 平空仓
                 if grid < len(self.band) - 2:
                     grid = grid + 1
-                if position.short_quantity > self.short_position_weight[grid] * self.short_position_weight_rate:
+                if position.short_quantity - self.short_fixed_position > self.short_position_weight[grid] * self.short_position_weight_rate:
                     self.short_status = 1
                     self.short_trade_size = self.short_position_weight[grid]
 
     def show(self):
-        msg = super(QuantificationStrategy1, self).show()
+        msg = super(GridStrategy, self).show()
         band_str = "".join(str(self.band))
         band_size = str(len(self.band))
         grid_str = str(self.grids[-1])
         curr_price = str(self.band[self.grids[-1]])
-        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s" % (msg, band_str, band_size, grid_str, curr_price)
+        atr = str(self.atr)
+        last_price = str(self.last_price)
+        auto_atr = str(self.auto_atr)
+        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s\nlast_price:%s\natr:%s\nauto_atr=%s" % \
+               (msg, band_str, band_size, grid_str, curr_price, last_price, atr, auto_atr)

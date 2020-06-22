@@ -13,7 +13,7 @@ from utils import trend_util
 
 class QuantificationStrategy(BaseStrategy):
     """
-    网格策略
+    网格策略 计算atr
     """
 
     def __init__(self):
@@ -27,7 +27,7 @@ class QuantificationStrategy(BaseStrategy):
         self.atr_per = 0.05   # 最小网格高度要求
         self.min_index = -1  # 网格基准先位置
         self.grids = deque(maxlen=10)  # 记录价格在网格中的位置
-        self.close_position_rate = 5  # 平仓价格倍数
+        self.close_position_rate = 10  # 平仓价格倍数
         self.margin_num_limit = 4  # 最少网格要求
         super(QuantificationStrategy, self).__init__()
         self.load_file()
@@ -135,11 +135,12 @@ class QuantificationStrategy(BaseStrategy):
         position = copy.copy(self.position)
 
         # 设置trade_curb
-        if self.auto_curb:
-            new_curb = trend_util.trend(klines, self.mark_symbol, self.period)
-            if self.trading_curb != new_curb:
-                self.trading_curb = new_curb
-                self.save_file()
+        self.change_curb(klines, position)
+        # if self.auto_curb:
+        #     new_curb = trend_util.trend(klines, self.mark_symbol, self.period)
+        #     if self.trading_curb != new_curb:
+        #         self.trading_curb = new_curb
+        #         self.save_file()
 
         df = klines.get("market." + self.mark_symbol + ".kline." + self.period)
         self.reset_bank(df)
@@ -204,7 +205,10 @@ class QuantificationStrategy(BaseStrategy):
         band_size = str(len(self.band))
         grid_str = str(self.grids[-1])
         curr_price = str(self.band[self.grids[-1]])
-        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s" % (msg, band_str, band_size, grid_str, curr_price)
+        atr = str(self.atr)
+        last_price = str(self.last_price)
+        return "%s\nband:%s\nsize:%s\ngrid:%s\nprice:%s\nlast_price:%s\natr:%s" % \
+               (msg, band_str, band_size, grid_str, curr_price, last_price, atr)
 
 
 
