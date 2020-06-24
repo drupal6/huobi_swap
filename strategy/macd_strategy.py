@@ -24,7 +24,7 @@ class MACDStrategy(BaseStrategy):
         position = copy.copy(self.position)
         self.change_curb(klines, position)
 
-        if self.trading_curb == TradingCurb.LIMITLONGBUY.value and position.long_quantity == 0:
+        if self.trading_curb == TradingCurb.LIMITSHORTBUY.value and position.long_quantity == 0:
             self.long_status = 1
             self.long_trade_size = self.min_volume
         if position.long_quantity > 0:
@@ -38,7 +38,7 @@ class MACDStrategy(BaseStrategy):
                 self.long_status = -1
                 self.trading_curb = TradingCurb.SELL.value
 
-        if self.trading_curb == TradingCurb.LIMITSHORTBUY.value and position.short_quantity == 0:
+        if self.trading_curb == TradingCurb.LIMITLONGBUY.value and position.short_quantity == 0:
             self.short_status = 1
             self.short_trade_size = self.min_volume
         if position.short_quantity > 0:
