@@ -20,7 +20,7 @@ pd.set_option('display.float_format', lambda x:'%.2f' % x)  # 设置不用科学
 class MatPlot:
 
     @classmethod
-    async def get_data(cls, symbol, period="1min", size=500):
+    async def get_data(cls, symbol, period="15min", size=500):
         success, error = await request.get_klines(contract_type=symbol, period=period, size=size)
         if error:
             print(error)
@@ -53,7 +53,7 @@ class MatPlot:
                 df.iloc[i, 5] = leading_y
                 df.iloc[i, 6] = k
                 df.iloc[i, 7] = b
-            y_d.append(df.iloc[i]["Sma"])
+            y_d.append(df.iloc[i]["Close"])
 
         price_values = df["Close"]
         k_values = df["k"]

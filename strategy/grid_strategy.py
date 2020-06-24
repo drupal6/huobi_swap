@@ -84,7 +84,8 @@ class GridStrategy(BaseStrategy):
         else:
             open_orders = copy.copy(self.orders)
             position = copy.copy(self.position)
-            if len(open_orders) == 0 and position.short_quantity == 0 and position.long_quantity == 0:
+            if len(open_orders) == 0 and position.short_quantity - self.short_fixed_position == 0 \
+                    and position.long_quantity - self.long_fixed_position == 0:
                 reset = True
         if reset:
             self.atr = 0

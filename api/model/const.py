@@ -2,8 +2,8 @@
 from enum import Enum
 
 
-KILINE_PERIOD = ["1min", "5min", "15min", "30min"]
-CURB_PERIOD = [7, 6, 5, 4]
+KILINE_PERIOD = ["1min", "5min"]
+CURB_PERIOD = [7, 6]
 TRADE = {
     "1min":  60000,
     "5min": 300000,

@@ -1,7 +1,8 @@
 mplfinance安装
 pip install --upgrade mplfinance
 
-
+sklearn安装
+pip install -U scikit-learn
 
 plant
 1、风控
