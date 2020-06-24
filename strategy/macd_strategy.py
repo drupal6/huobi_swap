@@ -23,7 +23,6 @@ class MACDStrategy(BaseStrategy):
         klines = copy.copy(self.klines)
         position = copy.copy(self.position)
         self.change_curb(klines, position)
-
         if self.trading_curb == TradingCurb.LIMITSHORTBUY.value and position.long_quantity == 0:
             self.long_status = 1
             self.long_trade_size = self.min_volume
