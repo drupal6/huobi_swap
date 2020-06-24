@@ -100,7 +100,7 @@ class HuobiRequest:
         """
         uri = "/market/history/trade"
         params = {
-            "contract_code": contract_type,
+            "symbol": contract_type,
             "size": size
         }
         success, error = await self.request("GET", uri, params=params)
