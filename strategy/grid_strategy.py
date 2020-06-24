@@ -121,7 +121,7 @@ class GridStrategy(BaseStrategy):
             # df['olhc'] = df[["open", "close", "high", "low"]].mean(axis=1)
             std = np.std(df['close'])
             if std < 1:
-                std = 1.1
+                std = 1.7
             band = np.mean(df['close']) + np.array(self.price_margin) * std  # 计算各个网格的价格
             self.band = band.tolist()
             for i in range(0, num):  # 做多的情况 计算网格仓位

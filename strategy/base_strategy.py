@@ -478,26 +478,22 @@ class BaseStrategy:
             last_bar = df.iloc[-2]
             last_ma = last_ma + last_bar["ma"]
             last_signal = last_signal + last_bar["signal"]
-        save_file = False
+        new_curb = None
         if position.long_quantity - self.long_fixed_position == 0 and \
                 position.short_quantity - self.short_fixed_position == 0:
             if last_ma <= last_signal and ma > signal:
-                self.trading_curb = TradingCurb.LIMITSHORTBUY.value
-                save_file = True
+                new_curb = TradingCurb.LIMITSHORTBUY.value
             elif last_ma >= last_signal and ma < signal:
-                self.trading_curb = TradingCurb.LIMITLONGBUY.value
-                save_file = True
+                new_curb = TradingCurb.LIMITLONGBUY.value
         else:
             if ma == signal:
-                self.trading_curb = TradingCurb.LOCK.value
-                save_file = True
+                new_curb = TradingCurb.LOCK.value
             if ma > signal:
-                self.trading_curb = TradingCurb.LIMITSHORTBUY.value
-                save_file = True
+                new_curb = TradingCurb.LIMITSHORTBUY.value
             if ma < signal:
-                self.trading_curb = TradingCurb.LIMITLONGBUY.value
-                save_file = True
-        if save_file:
+                new_curb = TradingCurb.LIMITLONGBUY.value
+        if new_curb and self.trading_curb != new_curb:
+            self.trading_curb = new_curb
             self.save_file()
         log_data["ma"] = ma
         log_data["signal"] = signal
