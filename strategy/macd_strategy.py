@@ -32,9 +32,11 @@ class MACDStrategy(BaseStrategy):
             # 达到利润平多
             if temp_profit > self.long_profit_per:
                 self.long_status = -1
+                self.trading_curb = TradingCurb.SELL.value
             # 平多止损
             elif temp_profit <= self.long_stop_loss_per:
                 self.long_status = -1
+                self.trading_curb = TradingCurb.SELL.value
 
         if self.trading_curb == TradingCurb.LIMITSHORTBUY.value and position.short_quantity == 0:
             self.short_status = 1
@@ -44,9 +46,11 @@ class MACDStrategy(BaseStrategy):
             # 达到利润平空
             if temp_profit > self.short_profit_per:
                 self.short_status = -1
+                self.trading_curb = TradingCurb.SELL.value
             # 平空止损
             elif temp_profit <= self.short_stop_loss_per:
                 self.short_status = -1
+                self.trading_curb = TradingCurb.SELL.value
 
 
 
