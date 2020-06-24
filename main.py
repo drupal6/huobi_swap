@@ -14,9 +14,6 @@ def initialize():
     elif strategy == "EmaStrategy":
         from strategy.ema_strategy import EmaStrategy
         return EmaStrategy()
-    elif strategy == "QuantificationStrategy":
-        from strategy.quantification_strategy import QuantificationStrategy
-        return QuantificationStrategy()
     elif strategy == "IchimokuStrategy":
         from strategy.ichimoku_strategy import IchimokuStrategy
         return IchimokuStrategy()
