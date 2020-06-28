@@ -59,7 +59,8 @@ class MatPlot:
             df = df.rename(columns={"id": "date"})
             df["date"] = pd.to_datetime(df["date"], unit="s")
             df.set_index(["date"], inplace=True)
-            MatPlot.show(df)
+            print(df)
+            # MatPlot.show(df)
 
     @classmethod
     def show(cls, df):
@@ -110,9 +111,9 @@ class MatPlot:
 
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
-    s = "ETH-USD"
-    p = "5min"
-    c = 1000
+    s = "BTC-USD"
+    p = "15min"
+    c = 500
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
     loop.close()
