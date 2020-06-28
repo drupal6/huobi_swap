@@ -13,8 +13,8 @@ class MACDStrategy(BaseStrategy):
     """
 
     def __init__(self):
-        self.long_profit_per = 0.5  # 多利润要求
-        self.short_profit_per = 0.3  # 多利润要求
+        self.long_profit_per = 1  # 多利润要求
+        self.short_profit_per = 1  # 多利润要求
         self.long_stop_loss_per = -1  # 多止损
         self.short_stop_loss_per = -1  # 空止损
         super(MACDStrategy, self).__init__()
