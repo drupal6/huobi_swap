@@ -49,7 +49,6 @@ class IchimokuStrategy(BaseStrategy):
             "cur_cb_dir": cur_cb_dir,
             "change_delay_dir": change_delay_dir,
             "cur_delay_dir": cur_delay_dir,
-            "last_price": self.last_price,
             "close": curr_bar["close"]
         }
         logger.info("IchimokuStrategy", log)
