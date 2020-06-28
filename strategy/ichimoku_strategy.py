@@ -64,16 +64,15 @@ class IchimokuStrategy(BaseStrategy):
         close = curr_bar["close"]
         charge_dir = 0
         cur_dir = 0
-
-        if last_close > last_min_lead and close < min_lead:
-            charge_dir = -1
-        elif last_close < last_max_lead and close > max_lead:
-            charge_dir = 1
-
         if close > max_lead:
+            if last_close <= last_max_lead:
+                charge_dir = 1
             cur_dir = 1
         elif close < min_lead:
+            if last_close >= last_min_lead:
+                charge_dir = -1
             cur_dir = -1
+
         return charge_dir, cur_dir
 
     def cb_base_ichimoku(self, last_bar, curr_bar, curr_lead):
@@ -89,12 +88,12 @@ class IchimokuStrategy(BaseStrategy):
         charge_dir = 0
         cur_dir = 0
         if conversion > max_lead and base > max_lead:
-            if last_conversion < last_base and conversion > base:
+            if last_conversion <= last_base and conversion > base:
                 charge_dir = 1
             if conversion > base:
                 cur_dir = 1
         elif conversion < min_lead and base < min_lead:
-            if last_conversion > last_base and conversion < base:
+            if last_conversion >= last_base and conversion < base:
                 charge_dir = -1
             if conversion < base:
                 cur_dir = -1
@@ -111,13 +110,13 @@ class IchimokuStrategy(BaseStrategy):
         close = curr_bar["close"]
         charge_dir = 0
         cur_dir = 0
-        if last_close > last_delay_min_lead and close < delay_min_lead:
-            charge_dir = -1
-        elif last_close < last_delay_max_lead and close > delay_max_lead:
-            charge_dir = 1
         if close > delay_max_lead:
+            if last_close <= last_delay_max_lead:
+                charge_dir = 1
             cur_dir = 1
         elif close < delay_min_lead:
+            if last_close >= last_delay_min_lead:
+                charge_dir = -1
             cur_dir = -1
         return charge_dir, cur_dir
 
