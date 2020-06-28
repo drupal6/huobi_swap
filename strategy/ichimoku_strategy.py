@@ -14,9 +14,9 @@ class IchimokuStrategy(BaseStrategy):
     一目均衡策略
     """
     def __init__(self):
-        self.conversion_periods = 9  # 转换线周期
-        self.base_periods = 26  # 基准线周期
-        self.lagging_span2_periods = 52
+        self.conversion_periods = 5  # 转换线周期
+        self.base_periods = 20  # 基准线周期
+        self.lagging_span2_periods = 40
         super(IchimokuStrategy, self).__init__()
 
     def strategy_handle(self):
@@ -39,16 +39,18 @@ class IchimokuStrategy(BaseStrategy):
         curr_lead = df.iloc[-self.base_periods]
         last_delay_lead = df.iloc[-self.lagging_span2_periods - 1]
         curr_delay_lead = df.iloc[-self.lagging_span2_periods]
-        charge_price_dir, cur_price_dir = self.price_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
-        change_cb_dir, cur_cb_dir = self.cb_base_ichimoku(last_bar, curr_bar, curr_lead)
-        change_delay_dir, cur_delay_dir = self.delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead)
+        cur_price_dir, charge_price_dir, price_base = self.price_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
+        cur_cb_dir, change_cb_dir, cb_dir = self.cb_base_ichimoku(last_bar, curr_bar, curr_lead)
+        cur_delay_dir, change_delay_dir = self.delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead)
         log = {
-            "charge_price_dir": charge_price_dir,
             "cur_price_dir": cur_price_dir,
-            "change_cb_dir": change_cb_dir,
+            "charge_price_dir": charge_price_dir,
+            "price_base": price_base,
             "cur_cb_dir": cur_cb_dir,
-            "change_delay_dir": change_delay_dir,
+            "change_cb_dir": change_cb_dir,
+            "cb_dir": cb_dir,
             "cur_delay_dir": cur_delay_dir,
+            "change_delay_dir": change_delay_dir,
             "close": curr_bar["close"]
         }
         logger.info("IchimokuStrategy", log)
@@ -56,28 +58,44 @@ class IchimokuStrategy(BaseStrategy):
     def price_ichimoku(self, last_bar, curr_bar, last_lead, curr_lead):
         """
         价格与云层
+        开多：价格上穿云层
+        开孔：价格下穿云层
+        止盈止损：价格反穿慢线或者价格反穿云层
         :return:
         """
         last_min_lead, last_max_lead = self.min_max(last_lead, "leada", "leadb")
         min_lead, max_lead = self.min_max(curr_lead, "leada", "leadb")
         last_close = last_bar["close"]
         close = curr_bar["close"]
-        charge_dir = 0
+        base = curr_bar["base"]
         cur_dir = 0
+        charge_dir = 0
+        price_base = 0
         if close > max_lead:
             if last_close <= last_max_lead:
                 charge_dir = 1
             cur_dir = 1
+            if close >= base:
+                price_base = 1
+            else:
+                price_base = -1
         elif close < min_lead:
             if last_close >= last_min_lead:
                 charge_dir = -1
             cur_dir = -1
+            if close <= base:
+                price_base = -1
+            else:
+                price_base = 1
 
-        return charge_dir, cur_dir
+        return cur_dir, charge_dir, price_base
 
     def cb_base_ichimoku(self, last_bar, curr_bar, curr_lead):
         """
         转换线基准线与云层
+        开多:转换线和基准线再云层上方且转换线在基准线上方
+        开空:转换线和基准线再云层下方且转换线在基准线下方
+        止盈：转换线反穿基准线
         :return:
         """
         min_lead, max_lead = self.min_max(curr_lead, "leada", "leadb")
@@ -85,31 +103,37 @@ class IchimokuStrategy(BaseStrategy):
         conversion = curr_bar["conversion"]
         last_base = last_bar["base"]
         base = curr_bar["base"]
-        charge_dir = 0
         cur_dir = 0
         if conversion > max_lead and base > max_lead:
-            if last_conversion <= last_base and conversion > base:
-                charge_dir = 1
-            if conversion > base:
-                cur_dir = 1
+            cur_dir = 1
         elif conversion < min_lead and base < min_lead:
-            if last_conversion >= last_base and conversion < base:
+            cur_dir = -1
+        cb_dir = 0
+        charge_dir = 0
+        if conversion > base:
+            if last_conversion <= last_base:
+                charge_dir = 1
+            cb_dir = 1
+        elif conversion < base:
+            if last_conversion >= last_base:
                 charge_dir = -1
-            if conversion < base:
-                cur_dir = -1
-        return charge_dir, cur_dir
+            cb_dir = -1
+        return cur_dir, charge_dir, cb_dir
 
     def delay_ichimoku(self, last_bar, curr_bar, last_delay_lead, curr_delay_lead):
         """
         延迟线与云层
+        开多：延迟上穿云层
+        开孔：延迟下穿云层
+        止盈：延迟线反穿云层
         :return:
         """
         last_delay_min_lead, last_delay_max_lead = self.min_max(last_delay_lead, "leada", "leadb")
         delay_min_lead, delay_max_lead = self.min_max(curr_delay_lead, "leada", "leadb")
         last_close = last_bar["close"]
         close = curr_bar["close"]
-        charge_dir = 0
         cur_dir = 0
+        charge_dir = 0
         if close > delay_max_lead:
             if last_close <= last_delay_max_lead:
                 charge_dir = 1
@@ -118,7 +142,7 @@ class IchimokuStrategy(BaseStrategy):
             if last_close >= last_delay_min_lead:
                 charge_dir = -1
             cur_dir = -1
-        return charge_dir, cur_dir
+        return cur_dir, charge_dir
 
     def min_max(self, bar, field1, field2):
         field_value1 = bar[field1]
