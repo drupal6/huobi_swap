@@ -1,7 +1,7 @@
 import talib
 from strategy.base_strategy import BaseStrategy
 import copy
-from utils import logger
+from utils import logger, ichimoku_util
 import pandas as pd
 pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
 pd.set_option('display.max_rows', 1000)  # 最多显示行数.
@@ -15,13 +15,14 @@ class IchimokuStrategy(BaseStrategy):
     """
     def __init__(self):
         self.conversion_periods = 5  # 转换线周期
-        self.base_periods = 20  # 基准线周期
-        self.lagging_span2_periods = 40
+        self.base_periods = 24  # 基准线周期
+        self.lagging_span2_periods = 48
         super(IchimokuStrategy, self).__init__()
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
-        df = klines.get("market."+self.mark_symbol+".kline." + self.period)
+        position = copy.copy(self.position)
+        df = klines.get("market.%s.kline.%s" % (self.mark_symbol, self.period))
         df["conversion_min"] = talib.MIN(df["low"], self.conversion_periods)
         df["conversion_max"] = talib.MAX(df["high"], self.conversion_periods)
         df["conversion"] = (df["conversion_min"] + df["conversion_max"]) / 2
@@ -39,9 +40,9 @@ class IchimokuStrategy(BaseStrategy):
         curr_lead = df.iloc[-self.base_periods]
         last_delay_lead = df.iloc[-self.lagging_span2_periods - 1]
         curr_delay_lead = df.iloc[-self.lagging_span2_periods]
-        cur_price_dir, charge_price_dir, price_base = self.price_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
-        cur_cb_dir, change_cb_dir, cb_dir = self.cb_base_ichimoku(last_bar, curr_bar, curr_lead)
-        cur_delay_dir, change_delay_dir = self.delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead)
+        cur_price_dir, charge_price_dir, price_base = ichimoku_util.price_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
+        cur_cb_dir, change_cb_dir, cb_dir = ichimoku_util.cb_base_ichimoku(last_bar, curr_bar, curr_lead)
+        cur_delay_dir, change_delay_dir = ichimoku_util.delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead)
         log = {
             "cur_price_dir": cur_price_dir,
             "charge_price_dir": charge_price_dir,
@@ -54,100 +55,94 @@ class IchimokuStrategy(BaseStrategy):
             "close": curr_bar["close"]
         }
         logger.info("IchimokuStrategy", log)
+        self.close_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cur_delay_dir, change_delay_dir)
+        self.open_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)
 
-    def price_ichimoku(self, last_bar, curr_bar, last_lead, curr_lead):
+    def open_position(self, cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir,
+                      cur_delay_dir, change_delay_dir):
         """
-        价格与云层
-        开多：价格上穿云层
-        开孔：价格下穿云层
-        止盈止损：价格反穿慢线或者价格反穿云层
-        :return:
-        """
-        last_min_lead, last_max_lead = self.min_max(last_lead, "leada", "leadb")
-        min_lead, max_lead = self.min_max(curr_lead, "leada", "leadb")
-        last_close = last_bar["close"]
-        close = curr_bar["close"]
-        base = curr_bar["base"]
-        cur_dir = 0
-        charge_dir = 0
-        price_base = 0
-        if close > max_lead:
-            if last_close <= last_max_lead:
-                charge_dir = 1
-            cur_dir = 1
-            if close >= base:
-                price_base = 1
-            else:
-                price_base = -1
-        elif close < min_lead:
-            if last_close >= last_min_lead:
-                charge_dir = -1
-            cur_dir = -1
-            if close <= base:
-                price_base = -1
-            else:
-                price_base = 1
+           开仓
+           :param cur_price_dir:
+           :param charge_price_dir:
+           :param cur_cb_dir:
+           :param change_cb_dir:
+           :param cb_dir:
+           :param cur_delay_dir:
+           :param change_delay_dir:
+           :return:
+       """
+        if -2 < cur_price_dir + cur_cb_dir + cur_delay_dir < 2:
+            return
+        open_long = False
+        open_short = False
+        # 开多
+        if cur_price_dir + cur_cb_dir + cur_delay_dir >= 2:
+            # 价格 云层
+            if cur_price_dir == 1 and charge_price_dir == 1:
+                open_long = True
+            # 转换线 基准线 云层
+            if cur_cb_dir == 1 and cb_dir == 1 and change_cb_dir == 1:
+                    open_long = True
+            # 延迟线 云层
+            if cur_delay_dir == 1 and change_delay_dir == 1:
+                open_long = True
 
-        return cur_dir, charge_dir, price_base
+        if cur_price_dir + cur_cb_dir + cur_delay_dir <= -2:
+            # 价格 云层
+            if cur_price_dir == -1 and charge_price_dir == -1:
+                open_short = True
+            # 转换线 基准线 云层
+            if cur_cb_dir == -1 and cb_dir == -1 and change_cb_dir == -1:
+                open_short = True
+            # 延迟线 云层
+            if cur_delay_dir == -1 and change_delay_dir == -1:
+                open_short = True
+        if open_long:
+            self.long_status = 1
+            self.long_trade_size = self.min_volume
+        if open_short:
+            self.short_status = 1
+            self.short_trade_size = self.min_volume
 
-    def cb_base_ichimoku(self, last_bar, curr_bar, curr_lead):
+    def close_position(self, position, cur_price_dir, price_base, cb_dir, cur_delay_dir):
         """
-        转换线基准线与云层
-        开多:转换线和基准线再云层上方且转换线在基准线上方
-        开空:转换线和基准线再云层下方且转换线在基准线下方
-        止盈：转换线反穿基准线
-        :return:
+              平仓
+              :param position:
+              :param cur_price_dir:
+              :param price_base:
+              :param cb_dir:
+              :param cur_delay_dir:
+              :return:
         """
-        min_lead, max_lead = self.min_max(curr_lead, "leada", "leadb")
-        last_conversion = last_bar["conversion"]
-        conversion = curr_bar["conversion"]
-        last_base = last_bar["base"]
-        base = curr_bar["base"]
-        cur_dir = 0
-        if conversion > max_lead and base > max_lead:
-            cur_dir = 1
-        elif conversion < min_lead and base < min_lead:
-            cur_dir = -1
-        cb_dir = 0
-        charge_dir = 0
-        if conversion > base:
-            if last_conversion <= last_base:
-                charge_dir = 1
-            cb_dir = 1
-        elif conversion < base:
-            if last_conversion >= last_base:
-                charge_dir = -1
-            cb_dir = -1
-        return cur_dir, charge_dir, cb_dir
-
-    def delay_ichimoku(self, last_bar, curr_bar, last_delay_lead, curr_delay_lead):
-        """
-        延迟线与云层
-        开多：延迟上穿云层
-        开孔：延迟下穿云层
-        止盈：延迟线反穿云层
-        :return:
-        """
-        last_delay_min_lead, last_delay_max_lead = self.min_max(last_delay_lead, "leada", "leadb")
-        delay_min_lead, delay_max_lead = self.min_max(curr_delay_lead, "leada", "leadb")
-        last_close = last_bar["close"]
-        close = curr_bar["close"]
-        cur_dir = 0
-        charge_dir = 0
-        if close > delay_max_lead:
-            if last_close <= last_delay_max_lead:
-                charge_dir = 1
-            cur_dir = 1
-        elif close < delay_min_lead:
-            if last_close >= last_delay_min_lead:
-                charge_dir = -1
-            cur_dir = -1
-        return cur_dir, charge_dir
-
-    def min_max(self, bar, field1, field2):
-        field_value1 = bar[field1]
-        field_value2 = bar[field2]
-        if field_value1 <= field_value2:
-            return field_value1, field_value2
-        else:
-            return field_value2, field_value1
+        close_long = False
+        close_short = False
+        if position.long_quantity > 0:
+            # 转换线基准线反穿
+            if cb_dir == -1:
+                close_long = True
+            # 价格反穿慢线
+            if price_base == -1:
+                close_long = True
+            # 延迟线反穿云层
+            if cur_delay_dir == -1:
+                close_long = True
+            # 价格反穿云层
+            if cur_price_dir == -1:
+                close_long = True
+        if position.short_quantity > 0:
+            # 转换线基准线反穿
+            if cb_dir == 1:
+                close_long = True
+            # 价格反穿慢线
+            if price_base == 1:
+                close_long = True
+            # 延迟线反穿云层
+            if cur_delay_dir == -1:
+                close_long = True
+            # 价格反穿云层
+            if cur_price_dir == -1:
+                close_long = True
+        if close_long:
+            self.long_status = -1
+        if close_short:
+            self.short_status = -1
