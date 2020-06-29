@@ -22,9 +22,9 @@ class MatPlot:
 
     @classmethod
     async def get_data(cls, symbol, period="5min", size=200):
-        conversion_periods = 9  # 转换线周期
-        base_periods = 26  # 基准线周期
-        lagging_span2_periods = 52
+        conversion_periods = 5  # 转换线周期
+        base_periods = 25  # 基准线周期
+        lagging_span2_periods = 48
         success, error = await request.get_klines(contract_type=symbol, period=period, size=size)
         if error:
             return None
@@ -59,8 +59,7 @@ class MatPlot:
             df = df.rename(columns={"id": "date"})
             df["date"] = pd.to_datetime(df["date"], unit="s")
             df.set_index(["date"], inplace=True)
-            print(df)
-            # MatPlot.show(df)
+            MatPlot.show(df)
 
     @classmethod
     def show(cls, df):
@@ -112,7 +111,7 @@ class MatPlot:
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "BTC-USD"
-    p = "15min"
+    p = "5min"
     c = 500
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))

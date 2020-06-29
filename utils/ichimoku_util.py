@@ -32,7 +32,7 @@ def price_ichimoku(last_bar, curr_bar, last_lead, curr_lead):
     return cur_dir, charge_dir, price_base
 
 
-def cb_base_ichimoku(last_bar, curr_bar, curr_lead):
+def cb_base_ichimoku(last_bar, curr_bar, last_lead, curr_lead):
     """
     转换线基准线与云层
     开多:转换线和基准线再云层上方且转换线在基准线上方
@@ -40,26 +40,27 @@ def cb_base_ichimoku(last_bar, curr_bar, curr_lead):
     止盈：转换线反穿基准线
     :return:
     """
+    last_min_lead, last_max_lead = min_max(last_lead, "leada", "leadb")
     min_lead, max_lead = min_max(curr_lead, "leada", "leadb")
     last_conversion = last_bar["conversion"]
     conversion = curr_bar["conversion"]
     last_base = last_bar["base"]
     base = curr_bar["base"]
     cur_dir = 0
+    charge_dir = 0
     if conversion > max_lead and base > max_lead:
         cur_dir = 1
+        if last_base <= last_max_lead or last_conversion <= last_max_lead:
+            charge_dir = 1
     elif conversion < min_lead and base < min_lead:
         cur_dir = -1
+        if last_base >= last_min_lead or last_conversion >= last_min_lead:
+            charge_dir = -1
     cb_dir = 0
-    charge_dir = 0
     if conversion > base:
         cb_dir = 1
-        if last_conversion <= last_base:
-            charge_dir = 1
     elif conversion < base:
         cb_dir = -1
-        if last_conversion >= last_base:
-            charge_dir = -1
     return cur_dir, charge_dir, cb_dir
 
 

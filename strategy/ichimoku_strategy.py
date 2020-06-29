@@ -41,7 +41,7 @@ class IchimokuStrategy(BaseStrategy):
         last_delay_lead = df.iloc[-self.lagging_span2_periods - 1]
         curr_delay_lead = df.iloc[-self.lagging_span2_periods]
         cur_price_dir, charge_price_dir, price_base = ichimoku_util.price_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
-        cur_cb_dir, change_cb_dir, cb_dir = ichimoku_util.cb_base_ichimoku(last_bar, curr_bar, curr_lead)
+        cur_cb_dir, change_cb_dir, cb_dir = ichimoku_util.cb_base_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
         cur_delay_dir, change_delay_dir = ichimoku_util.delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead)
         log = {
             "cur_price_dir": cur_price_dir,
@@ -54,9 +54,9 @@ class IchimokuStrategy(BaseStrategy):
             "change_delay_dir": change_delay_dir,
             "close": curr_bar["close"]
         }
-        logger.info("IchimokuStrategy", log)
-        self.close_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cur_delay_dir, change_delay_dir)
-        self.open_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)
+        logger.info("IchimokuStrategy:", log)
+        # self.open_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cur_delay_dir, change_delay_dir)
+        # self.close_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)
 
     def open_position(self, cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir,
                       cur_delay_dir, change_delay_dir):
