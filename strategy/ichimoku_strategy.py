@@ -123,7 +123,7 @@ class IchimokuStrategy(BaseStrategy):
         """
         close_long = False
         close_short = False
-        if position.long_quantity > 0:
+        if position.long_quantity - self.long_fixed_position > 0:
             # 转换线基准线反穿
             if cb_dir == -1:
                 close_long = True
@@ -136,7 +136,7 @@ class IchimokuStrategy(BaseStrategy):
             # # 价格反穿云层
             # if cur_price_dir == -1:
             #     close_long = True
-        if position.short_quantity > 0:
+        if position.short_quantity - self.short_fixed_position > 0:
             # 转换线基准线反穿
             if cb_dir == 1:
                 close_long = True
