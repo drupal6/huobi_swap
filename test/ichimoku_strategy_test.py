@@ -106,7 +106,7 @@ class IchimokuStrategyTest(BaseStrategyTest):
            :param change_delay_dir:
            :return:
        """
-        if -2 < cur_price_dir + cur_cb_dir + cur_delay_dir < 2:
+        if -2 < cur_price_dir + cur_cb_dir + cur_delay_dir < 2 or cur_cb_dir == 0:
             return
         open_long = False
         open_short = False
