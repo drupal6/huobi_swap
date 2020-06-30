@@ -57,11 +57,16 @@ def cb_base_ichimoku(last_bar, curr_bar, last_lead, curr_lead):
         if last_base >= last_min_lead or last_conversion >= last_min_lead:
             charge_dir = -1
     cb_dir = 0
+    cb_change_dir = 0
     if conversion > base:
         cb_dir = 1
+        if last_conversion <= last_base:
+            cb_change_dir = 1
     elif conversion < base:
         cb_dir = -1
-    return cur_dir, charge_dir, cb_dir
+        if last_conversion >= last_base:
+            cb_change_dir = -1
+    return cur_dir, charge_dir, cb_dir, cb_change_dir
 
 
 def delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead):

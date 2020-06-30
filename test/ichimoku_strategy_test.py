@@ -23,11 +23,11 @@ class IchimokuStrategyTest(BaseStrategyTest):
         pd_data1 = []
         lines = fileutil.load_file("../../logs/btc-config.out")
         columns_title = {"Date": 0, 'close': 1, 'cur_price_dir': 2, 'charge_price_dir': 3, 'price_base': 4,
-                         'cur_cb_dir': 5, 'change_cb_dir': 6, 'cb_dir': 7, 'cur_delay_dir': 8, 'change_delay_dir': 9,
-                         'zero': 10}
+                         'cur_cb_dir': 5, 'change_cb_dir': 6, 'cb_dir': 7, 'cb_change_dir': 8, 'cur_delay_dir': 9,
+                         'change_delay_dir': 10, 'zero': 11}
         for line in lines:
-            if "IchimokuStrategy" in line:
-                strs = line.split("IchimokuStrategy")
+            if "IchimokuStrategy:" in line:
+                strs = line.split("IchimokuStrategy:")
                 date_str = strs[0].split("I [")[1].split(",")[0].rstrip().lstrip()
                 json_str = strs[1].rstrip().lstrip().replace("'", "\"")
                 data = json.loads(json_str)
@@ -40,6 +40,7 @@ class IchimokuStrategyTest(BaseStrategyTest):
                     "cur_cb_dir": data["cur_cb_dir"],
                     "change_cb_dir": data["change_cb_dir"],
                     "cb_dir": data["cb_dir"],
+                    "cb_change_dir": data["cb_change_dir"],
                     "cur_delay_dir": data["cur_delay_dir"],
                     "change_delay_dir": data["change_delay_dir"],
                     "zero": 0
@@ -63,6 +64,7 @@ class IchimokuStrategyTest(BaseStrategyTest):
             "cur_cb_dir": data["cur_cb_dir"],
             "change_cb_dir": data["change_cb_dir"],
             "cb_dir": data["cb_dir"],
+            "cb_change_dir": data["cb_change_dir"],
             "cur_delay_dir": data["cur_delay_dir"],
             "change_delay_dir": data["change_delay_dir"],
             "zero": 0
@@ -79,15 +81,22 @@ class IchimokuStrategyTest(BaseStrategyTest):
         cur_cb_dir = curr_bar["cur_cb_dir"]
         change_cb_dir = curr_bar["change_cb_dir"]
         cb_dir = curr_bar["cb_dir"]
+        cb_change_dir = curr_bar["cb_change_dir"]
         cur_delay_dir = curr_bar["cur_delay_dir"]
         change_delay_dir = curr_bar["change_delay_dir"]
-        self.open_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cur_delay_dir, change_delay_dir)
-        self.close_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)
+        open_ret = self.open_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cb_change_dir,
+                                      cur_delay_dir, change_delay_dir)
+        close_ret = self.close_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)
+        if open_ret:
+            print("open_ret", curr_bar["Date"], curr_bar["close"])
+        if close_ret:
+            print("close_ret", curr_bar["Date"], curr_bar["close"])
 
-    def open_position(self, cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir,
+    def open_position(self, cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cb_change_dir,
                       cur_delay_dir, change_delay_dir):
         """
            开仓
+           :param cb_change_dir:
            :param cur_price_dir:
            :param charge_price_dir:
            :param cur_cb_dir:
@@ -107,8 +116,9 @@ class IchimokuStrategyTest(BaseStrategyTest):
             if cur_price_dir == 1 and charge_price_dir == 1:
                 open_long = True
             # 转换线 基准线 云层
-            if cur_cb_dir == 1 and cb_dir == 1 and change_cb_dir == 1:
-                open_long = True
+            if cur_cb_dir == 1 and cb_dir == 1:
+                if change_cb_dir == 1 or cb_change_dir == 1:
+                    open_long = True
             # 延迟线 云层
             if cur_delay_dir == 1 and change_delay_dir == 1:
                 open_long = True
@@ -118,17 +128,21 @@ class IchimokuStrategyTest(BaseStrategyTest):
             if cur_price_dir == -1 and charge_price_dir == -1:
                 open_short = True
             # 转换线 基准线 云层
-            if cur_cb_dir == -1 and cb_dir == -1 and change_cb_dir == -1:
-                open_short = True
+            if cur_cb_dir == -1 and cb_dir == -1:
+                if change_cb_dir == -1 or cb_change_dir == -1:
+                    open_short = True
             # 延迟线 云层
             if cur_delay_dir == -1 and change_delay_dir == -1:
                 open_short = True
         if open_long:
             self.long_status = 1
             self.long_trade_size = self.min_volume
+            return True
         if open_short:
             self.short_status = 1
             self.short_trade_size = self.min_volume
+            return True
+        return False
 
     def close_position(self, position, cur_price_dir, price_base, cb_dir, cur_delay_dir):
         """
@@ -146,32 +160,35 @@ class IchimokuStrategyTest(BaseStrategyTest):
             # 转换线基准线反穿
             if cb_dir == -1:
                 close_long = True
-            # 价格反穿慢线
-            if price_base == -1:
-                close_long = True
-            # 延迟线反穿云层
-            if cur_delay_dir == -1:
-                close_long = True
-            # 价格反穿云层
-            if cur_price_dir == -1:
-                close_long = True
+            # # 价格反穿慢线
+            # if price_base == -1:
+            #     close_long = True
+            # # 延迟线反穿云层
+            # if cur_delay_dir == -1:
+            #     close_long = True
+            # # 价格反穿云层
+            # if cur_price_dir == -1:
+            #     close_long = True
         if position.short_quantity > 0:
             # 转换线基准线反穿
             if cb_dir == 1:
                 close_long = True
-            # 价格反穿慢线
-            if price_base == 1:
-                close_long = True
-            # 延迟线反穿云层
-            if cur_delay_dir == -1:
-                close_long = True
-            # 价格反穿云层
-            if cur_price_dir == -1:
-                close_long = True
+            # # 价格反穿慢线
+            # if price_base == 1:
+            #     close_long = True
+            # # 延迟线反穿云层
+            # if cur_delay_dir == -1:
+            #     close_long = True
+            # # 价格反穿云层
+            # if cur_price_dir == -1:
+            #     close_long = True
         if close_long:
             self.long_status = -1
+            return True
         if close_short:
             self.short_status = -1
+            return True
+        return False
 
 
 if __name__ == "__main__":
