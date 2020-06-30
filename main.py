@@ -36,7 +36,7 @@ def main():
     if len(sys.argv) > 1:
         config_file = sys.argv[1]
     else:
-        config_file = "config/test/btc-config.json"
+        config_file = "config/test/eth-config.json"
 
     quant.initialize(config_file)
     bs = initialize()
