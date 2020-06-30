@@ -172,7 +172,7 @@ class IchimokuStrategyTest(BaseStrategyTest):
         if position.short_quantity > 0:
             # 转换线基准线反穿
             if cb_dir == 1:
-                close_long = True
+                close_short = True
             # # 价格反穿慢线
             # if price_base == 1:
             #     close_long = True
