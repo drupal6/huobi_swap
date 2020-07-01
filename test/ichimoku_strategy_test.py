@@ -17,11 +17,13 @@ class IchimokuStrategyTest(BaseStrategyTest):
         super(IchimokuStrategyTest, self).__init__()
         self.all_data = None
         self.data1 = None
+        self.last_bar = None
+        self.ty = None
 
     def init_log(self):
         pd_data = []
         pd_data1 = []
-        lines = fileutil.load_file("../../logs/btc-config.out")
+        lines = fileutil.load_file("../../logs/eth-config.out")
         columns_title = {"Date": 0, 'close': 1, 'cur_price_dir': 2, 'charge_price_dir': 3, 'price_base': 4,
                          'cur_cb_dir': 5, 'change_cb_dir': 6, 'cb_dir': 7, 'cb_change_dir': 8, 'cur_delay_dir': 9,
                          'change_delay_dir': 10, 'zero': 11}
@@ -87,10 +89,29 @@ class IchimokuStrategyTest(BaseStrategyTest):
         open_ret = self.open_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cb_change_dir,
                                       cur_delay_dir, change_delay_dir)
         close_ret = self.close_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)
+        self.ty = None
+        self.msg = None
         if open_ret:
-            print("open_ret", curr_bar["Date"], curr_bar["close"])
+            if self.long_status == 1:
+                self.ty = "多"
+            if self.short_status == 1:
+                self.ty = "空"
         if close_ret:
-            print("close_ret", curr_bar["Date"], curr_bar["close"])
+            if self.long_status == -1:
+                self.ty = "平多"
+            if self.short_status == -1:
+                self.ty = "平空"
+        if self.ty:
+            self.msg = "%s [%s] close:%s c_p_d:%s ch_p_d:%s p_b:%s c_c_d:%s ch_c_d:%s c_d:%s c_ch_d:%s c_d_d:%s ch_d_d:%s" % \
+                  (self.ty, curr_bar["Date"], curr_bar["close"], curr_bar["cur_price_dir"], curr_bar["charge_price_dir"],
+                   curr_bar["price_base"], curr_bar["cur_cb_dir"], curr_bar["change_cb_dir"], curr_bar["cb_dir"],
+                   curr_bar["cb_change_dir"], curr_bar["cur_delay_dir"], curr_bar["change_delay_dir"])
+
+    def after_strategy(self):
+        super(IchimokuStrategyTest, self).after_strategy()
+        if self.deal:
+            print(self.msg)
+            print("")
 
     def open_position(self, cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cb_change_dir,
                       cur_delay_dir, change_delay_dir):
@@ -111,29 +132,35 @@ class IchimokuStrategyTest(BaseStrategyTest):
         open_long = False
         open_short = False
         # 开多
-        if cur_price_dir + cur_cb_dir + cur_delay_dir >= 2:
+        if cur_price_dir + cur_cb_dir + cur_delay_dir >= 2 and cb_dir == 1:
             # 价格 云层
             if cur_price_dir == 1 and charge_price_dir == 1:
                 open_long = True
+                # print("long 价格 云层")
             # 转换线 基准线 云层
-            if cur_cb_dir == 1 and cb_dir == 1:
+            if cur_cb_dir == 1:
                 if change_cb_dir == 1 or cb_change_dir == 1:
                     open_long = True
+                    # print("long 转换线 基准线 云层")
             # 延迟线 云层
             if cur_delay_dir == 1 and change_delay_dir == 1:
                 open_long = True
+                # print("long 延迟线 云层")
 
-        if cur_price_dir + cur_cb_dir + cur_delay_dir <= -2:
+        if cur_price_dir + cur_cb_dir + cur_delay_dir <= -2 and cb_dir == -1:
             # 价格 云层
             if cur_price_dir == -1 and charge_price_dir == -1:
                 open_short = True
+                # print("short 价格 云层")
             # 转换线 基准线 云层
-            if cur_cb_dir == -1 and cb_dir == -1:
+            if cur_cb_dir == -1:
                 if change_cb_dir == -1 or cb_change_dir == -1:
                     open_short = True
+                    # print("short 转换线 基准线 云层")
             # 延迟线 云层
             if cur_delay_dir == -1 and change_delay_dir == -1:
                 open_short = True
+                # print("short 延迟线 云层")
         if open_long:
             self.long_status = 1
             self.long_trade_size = self.min_volume

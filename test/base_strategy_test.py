@@ -66,6 +66,7 @@ class BaseStrategyTest:
         self.last_price = 0
         self.long_status = 0  # 0不处理  1做多 -1平多
         self.short_status = 0  # 0不处理  1做空 -1 平空
+        self.deal = False
 
     def update_data(self, data):
         pass
@@ -83,6 +84,7 @@ class BaseStrategyTest:
         self.long_trade_size = 0
         self.short_trade_size = 0
         self.last_price = 0
+        self.deal = False
         return True
 
     def strategy_handle(self):
@@ -158,22 +160,26 @@ class BaseStrategyTest:
                 logger.info("开多 price:", price, "amount:", self.position.long_quantity, "rate:", self.lever_rate,
                             caller=self)
                 print("开多 price:", price, "amount:", self.position.long_quantity, "rate:", self.lever_rate)
+                self.deal = True
             elif quantity < 0:
                 self.position.short_quantity = self.position.short_quantity + quantity
                 logger.info("平空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
                             caller=self)
                 print("平空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate)
+                self.deal = True
         if action == ORDER_ACTION_SELL:
             if quantity > 0:
                 self.position.long_quantity = self.position.long_quantity - quantity
                 logger.info("平多 price:", price, "amount:", self.position.long_quantity, "rate:", self.lever_rate,
                             caller=self)
                 print("平多 price:", price, "amount:", self.position.long_quantity, "rate:", self.lever_rate)
+                self.deal = True
             elif quantity < 0:
                 self.position.short_quantity = self.position.short_quantity - quantity
                 logger.info("开空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate,
                             caller=self)
                 print("开空 price:", price, "amount:", self.position.short_quantity, "rate:", self.lever_rate)
+                self.deal = True
         return 0
 
 
