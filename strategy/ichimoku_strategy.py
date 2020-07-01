@@ -40,7 +40,7 @@ class IchimokuStrategy(BaseStrategy):
         curr_lead = df.iloc[-self.base_periods]
         last_delay_lead = df.iloc[-self.lagging_span2_periods - 1]
         curr_delay_lead = df.iloc[-self.lagging_span2_periods]
-        cur_lead_dir, charge_lead_dir = ichimoku_util.lead_dir(last_lead, curr_lead)
+        cur_lead_dir, charge_lead_dir = ichimoku_util.lead_dir(last_bar, curr_bar)
         cur_price_dir, charge_price_dir, price_base = ichimoku_util.price_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
         cur_cb_dir, change_cb_dir, cb_dir, cb_change_dir = ichimoku_util.cb_base_ichimoku(last_bar, curr_bar, last_lead, curr_lead)
         cur_delay_dir, change_delay_dir = ichimoku_util.delay_ichimoku(last_bar, curr_bar, last_delay_lead, curr_delay_lead)
