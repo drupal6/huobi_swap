@@ -1,5 +1,29 @@
 
 
+def lead_dir(last_lead, curr_lead):
+    """
+    云层快线和慢线
+    :param last_lead:
+    :param curr_lead:
+    :return:
+    """
+    last_leada = last_lead["leada"]
+    cur_leada = curr_lead["leada"]
+    last_leadb = last_lead["leadb"]
+    cur_leadb = curr_lead["leadb"]
+    cur_dir = 0
+    change_dir = 0
+    if cur_leada > cur_leadb:
+        cur_dir = 1
+        if last_leada <= last_leadb:
+            change_dir = 1
+    if cur_leada < cur_leadb:
+        cur_dir = -1
+        if last_leada >= last_leadb:
+            change_dir = -1
+    return cur_dir, change_dir
+
+
 def price_ichimoku(last_bar, curr_bar, last_lead, curr_lead):
     """
     价格与云层
