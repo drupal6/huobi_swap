@@ -5,6 +5,7 @@ import numpy as np
 from api.model.const import KILINE_PERIOD
 from api.model.const import TradingCurb
 from utils import logger
+from utils import trend_util
 
 
 class MACDStrategy(BaseStrategy):
@@ -21,37 +22,38 @@ class MACDStrategy(BaseStrategy):
 
     def strategy_handle(self):
         klines = copy.copy(self.klines)
-        position = copy.copy(self.position)
-
-        self.change_curb(klines, position)
-
-        if self.trading_curb == TradingCurb.LIMITSHORTBUY.value and position.long_quantity == 0:
-            self.long_status = 1
-            self.long_trade_size = self.min_volume
-        if position.long_quantity > 0:
-            temp_profit = (self.last_price - position.long_avg_open_price) * self.lever_rate / position.long_avg_open_price
-            # 达到利润平多
-            if temp_profit > self.long_profit_per:
-                self.long_status = -1
-                self.trading_curb = TradingCurb.SELL.value
-            # 平多止损
-            elif temp_profit <= self.long_stop_loss_per:
-                self.long_status = -1
-                self.trading_curb = TradingCurb.SELL.value
-
-        if self.trading_curb == TradingCurb.LIMITLONGBUY.value and position.short_quantity == 0:
-            self.short_status = 1
-            self.short_trade_size = self.min_volume
-        if position.short_quantity > 0:
-            temp_profit = (position.short_avg_open_price - self.last_price) * self.lever_rate / position.short_avg_open_price
-            # 达到利润平空
-            if temp_profit > self.short_profit_per:
-                self.short_status = -1
-                self.trading_curb = TradingCurb.SELL.value
-            # 平空止损
-            elif temp_profit <= self.short_stop_loss_per:
-                self.short_status = -1
-                self.trading_curb = TradingCurb.SELL.value
+        trend_util.trend(klines, self.mark_symbol)
+        # position = copy.copy(self.position)
+        #
+        # self.change_curb(klines, position)
+        #
+        # if self.trading_curb == TradingCurb.LIMITSHORTBUY.value and position.long_quantity == 0:
+        #     self.long_status = 1
+        #     self.long_trade_size = self.min_volume
+        # if position.long_quantity > 0:
+        #     temp_profit = (self.last_price - position.long_avg_open_price) * self.lever_rate / position.long_avg_open_price
+        #     # 达到利润平多
+        #     if temp_profit > self.long_profit_per:
+        #         self.long_status = -1
+        #         self.trading_curb = TradingCurb.SELL.value
+        #     # 平多止损
+        #     elif temp_profit <= self.long_stop_loss_per:
+        #         self.long_status = -1
+        #         self.trading_curb = TradingCurb.SELL.value
+        #
+        # if self.trading_curb == TradingCurb.LIMITLONGBUY.value and position.short_quantity == 0:
+        #     self.short_status = 1
+        #     self.short_trade_size = self.min_volume
+        # if position.short_quantity > 0:
+        #     temp_profit = (position.short_avg_open_price - self.last_price) * self.lever_rate / position.short_avg_open_price
+        #     # 达到利润平空
+        #     if temp_profit > self.short_profit_per:
+        #         self.short_status = -1
+        #         self.trading_curb = TradingCurb.SELL.value
+        #     # 平空止损
+        #     elif temp_profit <= self.short_stop_loss_per:
+        #         self.short_status = -1
+        #         self.trading_curb = TradingCurb.SELL.value
 
     def change_curb(self, klines, position):
         if not self.auto_curb:

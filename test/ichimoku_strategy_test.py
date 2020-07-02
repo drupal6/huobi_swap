@@ -69,6 +69,8 @@ class IchimokuStrategyTest(BaseStrategyTest):
             "cb_change_dir": data["cb_change_dir"],
             "cur_delay_dir": data["cur_delay_dir"],
             "change_delay_dir": data["change_delay_dir"],
+            "cur_lead_dir": data["cur_lead_dir"],
+            "charge_lead_dir": data["charge_lead_dir"],
             "zero": 0
         }]
         self.data1 = self.data1.append(new_kline, ignore_index=True)
@@ -86,6 +88,8 @@ class IchimokuStrategyTest(BaseStrategyTest):
         cb_change_dir = curr_bar["cb_change_dir"]
         cur_delay_dir = curr_bar["cur_delay_dir"]
         change_delay_dir = curr_bar["change_delay_dir"]
+        cur_lead_dir = curr_bar["cur_lead_dir"]
+        charge_lead_dir = curr_bar["charge_lead_dir"]
         open_ret = self.open_position(cur_price_dir, charge_price_dir, cur_cb_dir, change_cb_dir, cb_dir, cb_change_dir,
                                       cur_delay_dir, change_delay_dir)
         close_ret = self.close_position(position, cur_price_dir, price_base, cb_dir, cur_delay_dir)

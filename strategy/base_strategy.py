@@ -179,8 +179,8 @@ class BaseStrategy:
                                         klines_max_size=self.klines_max_size))
         market.add_sub(DepthSub(symbol=self.mark_symbol, step=self.step, depths=self.depths,
                                 depths_max_size=self.depths_max_size))
-        market.add_sub(InitTradeSub(symbol=self.mark_symbol, request=self.request))
-        market.add_sub(TradeSub(symbol=self.mark_symbol, trades=self.trades, trades_max_size=self.trades_max_size))
+        market.add_sub(InitTradeSub(symbol=self.mark_symbol, period=self.period, request=self.request))
+        market.add_sub(TradeSub(symbol=self.mark_symbol, period=self.period, trades=self.trades, trades_max_size=self.trades_max_size))
         market.start()
         return market
 

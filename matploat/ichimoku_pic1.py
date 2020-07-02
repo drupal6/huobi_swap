@@ -27,13 +27,13 @@ class MatPlot:
     @classmethod
     def get_data(cls):
         pd_data = []
-        lines = fileutil.load_file("../../logs/btc-config.out")
+        lines = fileutil.load_file("../../logs/eth-config.out")
         columns_title = {"Date": 0, 'close': 1, 'cur_price_dir': 2, 'charge_price_dir': 3, 'price_base': 4,
-                         'cur_cb_dir': 5, 'change_cb_dir': 6, 'cb_dir': 7, 'cur_delay_dir': 8, 'change_delay_dir': 9,
-                         'zero': 10}
+                         'cur_cb_dir': 5, 'change_cb_dir': 6, 'cb_dir': 7, 'cb_change_dir': 8, 'cur_delay_dir': 9,
+                         'change_delay_dir': 10, 'zero': 11, 'cur_lead_dir': 12, 'charge_lead_dir': 13}
         for line in lines:
-            if "IchimokuStrategy" in line:
-                strs = line.split("IchimokuStrategy")
+            if "IchimokuStrategy:" in line:
+                strs = line.split("IchimokuStrategy:")
                 date_str = strs[0].split("I [")[1].split(",")[0].rstrip().lstrip()
                 json_str = strs[1].rstrip().lstrip().replace("'", "\"")
                 data = json.loads(json_str)
@@ -46,9 +46,12 @@ class MatPlot:
                     "cur_cb_dir": data["cur_cb_dir"],
                     "change_cb_dir": data["change_cb_dir"],
                     "cb_dir": data["cb_dir"],
+                    "cb_change_dir": data["cb_change_dir"],
                     "cur_delay_dir": data["cur_delay_dir"],
                     "change_delay_dir": data["change_delay_dir"],
-                    "zero": 0
+                    "zero": 0,
+                    "cur_lead_dir": data["cur_lead_dir"],
+                    "charge_lead_dir": data["charge_lead_dir"]
                 }
                 pd_data.append(append_data)
         df = pd.DataFrame(pd_data, columns=columns_title)
@@ -57,19 +60,30 @@ class MatPlot:
 
     @classmethod
     def show(cls, df):
+
         close_values = df["close"]
+
+        df["total_dir"] = df["cur_price_dir"] + df["price_base"] + df["cur_cb_dir"] + df["cb_dir"] + df["cur_delay_dir"] + df["cur_lead_dir"]
+        df["total_change_dir"] = df["charge_price_dir"] + df["change_cb_dir"] + df["cb_change_dir"] + df["change_delay_dir"] + df["charge_lead_dir"]
+        total_dir_values = df["total_dir"]
+        total_change_dir_values = df["total_change_dir"]
+
         cur_price_dir_values = df["cur_price_dir"]
-        charge_price_dir_values = df["charge_price_dir"]
         price_base_values = df["price_base"]
         cur_cb_dir_values = df["cur_cb_dir"]
-        change_cb_dir_values = df["change_cb_dir"]
         cb_dir_values = df["cb_dir"]
         cur_delay_dir_values = df["cur_delay_dir"]
+        cur_lead_dir_values = df["cur_lead_dir"]
+
+        charge_price_dir_values = df["charge_price_dir"]
+        change_cb_dir_values = df["change_cb_dir"]
+        cb_change_dir_values = df["cb_change_dir"]
         change_delay_dir_values = df["change_delay_dir"]
+        charge_lead_dir_values = df["charge_lead_dir"]
         zero_values = df["zero"]
 
         # 设置画布，纵向排列的三个子图
-        fig, ax = plt.subplots(4, 1)
+        fig, ax = plt.subplots(3, 1)
 
         # 设置标签显示中文
         plt.rcParams['font.sans-serif'] = ['SimHei']
@@ -83,18 +97,24 @@ class MatPlot:
         ax[0].set_title('A_Stock %s MACD Indicator' % ("test"))
         close_values.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
 
-        # 应用同步缩放
-        ax[1] = plt.subplot(412, sharex=ax[0])
-        cur_price_dir_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
+        ax[1] = plt.subplot(312, sharex=ax[0])
+        total_dir_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # cur_price_dir_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # cur_cb_dir_values.plot(ax=ax[1], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # cur_delay_dir_values.plot(ax=ax[1], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # cur_lead_dir_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # cb_dir_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # price_base_values.plot(ax=ax[1], color='m', lw=1., legend=True, sharex=ax[0], use_index=False)
+        zero_values.plot(ax=ax[1], color='r', lw=1., legend=True, sharex=ax[0], use_index=False, linestyle="--")
 
-        ax[2] = plt.subplot(413, sharex=ax[0])
-        cur_cb_dir_values.plot(ax=ax[2], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[2], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
-
-        ax[3] = plt.subplot(414, sharex=ax[0])
-        cur_delay_dir_values.plot(ax=ax[3], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[3], color='r', lw=1., legend=True, sharex=ax[0], use_index=False)
+        ax[2] = plt.subplot(313, sharex=ax[0])
+        total_change_dir_values.plot(ax=ax[2], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # charge_price_dir_values.plot(ax=ax[2], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # change_cb_dir_values.plot(ax=ax[2], color='b', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # cb_change_dir_values.plot(ax=ax[2], color='c', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # change_delay_dir_values.plot(ax=ax[2], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # charge_lead_dir_values.plot(ax=ax[2], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        zero_values.plot(ax=ax[2], color='r', lw=1., legend=True, sharex=ax[0], use_index=False, linestyle="--")
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         scale = 100

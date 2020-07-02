@@ -6,7 +6,7 @@ import copy
 
 
 class TradeRecordNode:
-    def __init__(self, ts, t, symbol):
+    def __init__(self, ts, t, symbol, period):
         self.ts = ts
         self.t = t
         self.symbol = symbol
@@ -14,6 +14,7 @@ class TradeRecordNode:
         self.sell = 0
         self.buy_price = 0
         self.sell_price = 0
+        self.period = period
 
     def add(self, direction, quantity, price):
         if direction.lower() == "buy":
@@ -36,7 +37,7 @@ class TradeRecordNode:
         sell = "%.8f" % self.sell
         sell_price = "%.8f" % self.sell_price
         return "%s\nsymbol:%s\nperiod:%s\nbuy:%s\nsell:%s\nbuy price:%s\nsell price:%s" \
-               % (self.t, symbol, "5min", buy, sell, buy_price, sell_price)
+               % (self.t, symbol, self.period, buy, sell, buy_price, sell_price)
 
 
 class Record:
@@ -50,9 +51,9 @@ class Record:
         self.notice_period = 10 * 60 * 1000
         self.dingding = False
 
-    def record_trade(self, symbol, tick, init=False):
+    def record_trade(self, symbol, tick, period="5min", init=False):
         if not self.period:
-            self.period = "5min"
+            self.period = period
             self.period_ts = TRADE[self.period]
             if self.period_ts < self.notice_period:
                 self.notice_period = TRADE[self.period]
@@ -65,7 +66,7 @@ class Record:
             return
         t = tools.ts_to_datetime_str(int(ts / TRADE[self.period]) * TRADE[self.period] / 1000)
         if not self.record_node:
-            self.record_node = TradeRecordNode(ts, t, symbol)
+            self.record_node = TradeRecordNode(ts, t, symbol, self.period)
         direction = tick.get("direction")
         quantity = tick.get("amount")
         price = tick.get("price")

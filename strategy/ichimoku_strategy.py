@@ -14,9 +14,9 @@ class IchimokuStrategy(BaseStrategy):
     一目均衡策略
     """
     def __init__(self):
-        self.conversion_periods = 5  # 转换线周期
-        self.base_periods = 24  # 基准线周期
-        self.lagging_span2_periods = 48
+        self.conversion_periods = 9  # 转换线周期
+        self.base_periods = 26  # 基准线周期
+        self.lagging_span2_periods = 52
         super(IchimokuStrategy, self).__init__()
 
     def strategy_handle(self):
