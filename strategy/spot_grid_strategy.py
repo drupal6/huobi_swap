@@ -47,7 +47,7 @@ class SpotGridStrategy(object):
         self.gap_percent = config.markets.get("gap_percent", 0.003)  # 网格大小
         self.quantity = config.markets.get("quantity", 1)   # 成交量
         self.quantity_rate = config.markets.get("quantity_rate", 1)   #
-        self.min_price = config.markets.get("quantity_rate", 0.0001)  # 价格保留小数位
+        self.min_price = config.markets.get("min_price", 0.0001)  # 价格保留小数位
         # self.min_qty = 0.01  # 数量保留小数位
         self.max_orders = config.markets.get("max_orders", 1)
         self.http_client = HuobiRequestSpot(host=self.host, access_key=self.access_key, secret_key=self.secret_key)
@@ -74,7 +74,8 @@ class SpotGridStrategy(object):
         if error:
             print("init get_open_orders error. msg:", error)
         if order_data:
-            open_orders = order_data.get["data"]
+            print("order_data", order_data)
+            open_orders = order_data.get("data")
             for order in open_orders:
                 order_id = order["id"]
                 await self.http_client.cancel_order(order_id)

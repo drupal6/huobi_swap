@@ -95,7 +95,7 @@ class HuobiRequestSpot:
         当“下单价格”>“市场最高买入价”，提交成功后，此订单将被系统接受。
         :return:
         """
-        uri = "/api/v1/contract_order"
+        uri = "/v1/order/orders/place"
         body = {
             "account_id": account_id,
             "symbol": symbol,
