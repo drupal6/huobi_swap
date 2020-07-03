@@ -3,6 +3,7 @@ from utils.tools import round_to
 import datetime
 from enum import Enum
 from api.model.tasks import LoopRunTask
+from utils.config import config
 
 
 class OrderStatus(Enum):
@@ -39,16 +40,16 @@ class OrderSide(Enum):
 class SpotGridStrategy(object):
 
     def __init__(self):
-        self.host = "https://api.huobi.pro"
-        self.access_key = "1e4ed077-b8d18907-ur2fg6h2gf-2be07"
-        self.secret_key = "4ea90a69-35b3933b-1973ee10-a4dbb"
-        self.symbol = "ethbtc"
-        self.gap_percent = 0.003  # 网格大小
-        self.quantity = 1   # 成交量
-        self.quantity_rate = 1   #
-        self.min_price = 0.0001  # 价格保留小数位
+        self.host = config.accounts.get("host", "https://api.huobi.pro")
+        self.access_key = config.accounts.get("access_key")
+        self.secret_key = config.accounts.get("secret_key")
+        self.symbol = config.markets.get("mark_symbol")
+        self.gap_percent = config.markets.get("gap_percent", 0.003)  # 网格大小
+        self.quantity = config.markets.get("quantity", 1)   # 成交量
+        self.quantity_rate = config.markets.get("quantity_rate", 1)   #
+        self.min_price = config.markets.get("quantity_rate", 0.0001)  # 价格保留小数位
         # self.min_qty = 0.01  # 数量保留小数位
-        self.max_orders = 1
+        self.max_orders = config.markets.get("max_orders", 1)
         self.http_client = HuobiRequestSpot(host=self.host, access_key=self.access_key, secret_key=self.secret_key)
         self.buy_orders = []  # 买单
         self.sell_orders = []  # 卖单
@@ -224,8 +225,8 @@ class SpotGridStrategy(object):
             if order:
                 self.sell_orders.remove(delete_order)
 
-    async def place_order(self, type, quantity, price):
-        success, error = await self.http_client.place_order(account_id=self.account_id, symbol=self.symbol, type=type.value, amount=quantity, price=price)
+    async def place_order(self, type, amount, price):
+        success, error = await self.http_client.place_order(account_id=self.account_id, symbol=self.symbol, type=type.value, amount=amount, price=price)
         if error:
             print("place_order error. error:", error)
         if success:
