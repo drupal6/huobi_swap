@@ -147,6 +147,7 @@ def float_to_str(f, p=20):
     d1 = ctx.create_decimal(repr(f))
     return format(d1, 'f')
 
+
 def noround_float(f, n):
     """ Get the given n digit float to the string, without rounding up or rounding down.
     """
@@ -155,6 +156,7 @@ def noround_float(f, n):
     c = (c+"0"*n)[:n]
     return ".".join([a, c])
 
+
 def decimal_digit(digit):
     """ Get the Decimal n digit present for Decimal.
     """
@@ -162,6 +164,7 @@ def decimal_digit(digit):
     for i in range(digit):
         f_str += '0'
     return f_str
+
 
 def round_to(value: float, target: float) -> float:
     """
