@@ -97,7 +97,7 @@ class HuobiRequestSpot:
         """
         uri = "/v1/order/orders/place"
         body = {
-            "account_id": account_id,
+            "account-id": account_id,
             "symbol": symbol,
             "type": type,
             "amount": amount,
@@ -137,7 +137,7 @@ class HuobiRequestSpot:
         """
         uri = "/v1/order/openOrders"
         body = {
-            "account_id": account_id,
+            "account-id": account_id,
             "symbol": symbol,
             "side": type
         }

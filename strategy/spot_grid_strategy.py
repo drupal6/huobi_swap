@@ -55,7 +55,7 @@ class SpotGridStrategy(object):
         self.sell_orders = []  # 卖单
         self.account_id = None
 
-        LoopRunTask.register(self.grid_trader, 10)
+        LoopRunTask.register(self.grid_trader, 50)
 
     async def init_data(self):
         success, error = await self.http_client.get_accounts()
@@ -79,15 +79,15 @@ class SpotGridStrategy(object):
             for order in open_orders:
                 order_id = order["id"]
                 await self.http_client.cancel_order(order_id)
-        symbols_data, err = await self.http_client.get_symbols()
-        if err:
-            print("get_symbols error. error:", err)
-        if symbols_data:
-            symbols = symbols_data.get("data")
-            for symbol_info in symbols:
-                if symbol_info["symbol"] == self.symbol:
-                    self.quantity = symbol_info["min-order-amt"] * self.quantity_rate
-                    self.min_price = 1 / (10 ** symbol_info["value-precision"])
+        # symbols_data, err = await self.http_client.get_symbols()
+        # if err:
+        #     print("get_symbols error. error:", err)
+        # if symbols_data:
+        #     symbols = symbols_data.get("data")
+        #     for symbol_info in symbols:
+        #         if symbol_info["symbol"] == self.symbol:
+        #             self.quantity = symbol_info["min-order-amt"] * self.quantity_rate
+        #             self.min_price = 1 / (10 ** symbol_info["value-precision"])
 
     async def get_bid_ask_price(self):
         ticker, error = await self.http_client.get_ticker(self.symbol)
@@ -232,7 +232,7 @@ class SpotGridStrategy(object):
             print("place_order error. error:", error)
         if success:
             if success.get("data"):
-                order, error1 = await self.http_client.get_order(success.get("data").get("data"))
+                order, error1 = await self.http_client.get_order(success.get("data"))
                 if error1:
                     print("get_order error. error:", error1)
                 if order:

@@ -4,6 +4,7 @@ from utils.config import config
 from api.model.error import Error
 from utils import httpserver
 from utils.httpserver import MyHttpServer
+from strategy.spot_grid_strategy import SpotGridStrategy
 
 
 def initialize():
@@ -26,6 +27,8 @@ def initialize():
     elif strategy == "GridStrategy":
         from strategy.grid_strategy import GridStrategy
         return GridStrategy()
+    if strategy == "SpotGridStrategy":
+        SpotGridStrategy()
     else:
         e = Error(strategy + " not exit.")
         exit(0)
