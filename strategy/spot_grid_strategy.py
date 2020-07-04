@@ -4,6 +4,7 @@ import datetime
 from enum import Enum
 from api.model.tasks import LoopRunTask
 from utils.config import config
+from utils import logger
 
 
 class OrderStatus(Enum):
@@ -44,6 +45,9 @@ class SpotGridStrategy(object):
         self.access_key = config.accounts.get("access_key")
         self.secret_key = config.accounts.get("secret_key")
         self.symbol = config.markets.get("mark_symbol")
+        self.platform = config.markets.get("platform", "spot")
+        self.base_symbol = config.markets.get("base_symbol")
+        self.quote_symbol = config.markets.get("quote_symbol")
         self.gap_percent = config.markets.get("gap_percent", 0.003)  # 网格大小
         self.quantity = config.markets.get("quantity", 1)   # 成交量
         self.quantity_rate = config.markets.get("quantity_rate", 1)   #
@@ -55,7 +59,7 @@ class SpotGridStrategy(object):
         self.sell_orders = []  # 卖单
         self.account_id = None
 
-        LoopRunTask.register(self.grid_trader, 100)
+        LoopRunTask.register(self.grid_trader, 120)
 
     async def init_data(self):
         success, error = await self.http_client.get_accounts()
@@ -65,7 +69,7 @@ class SpotGridStrategy(object):
         if success.get("status") == "ok":
             data = success.get("data")
             for d in data:
-                if d.get("type") == "spot":
+                if d.get("type") == self.platform:
                     self.account_id = d.get("id")
         if not self.account_id:
             print("init account_id error. msg:", success)
@@ -79,15 +83,18 @@ class SpotGridStrategy(object):
             for order in open_orders:
                 order_id = order["id"]
                 await self.http_client.cancel_order(order_id)
-        # symbols_data, err = await self.http_client.get_symbols()
-        # if err:
-        #     print("get_symbols error. error:", err)
-        # if symbols_data:
-        #     symbols = symbols_data.get("data")
-        #     for symbol_info in symbols:
-        #         if symbol_info["symbol"] == self.symbol:
-        #             self.quantity = symbol_info["min-order-amt"] * self.quantity_rate
-        #             self.min_price = 1 / (10 ** symbol_info["value-precision"])
+        symbols_data, err = await self.http_client.get_symbols()
+        if err:
+            print("get_symbols error. error:", err)
+        if symbols_data:
+            symbols = symbols_data.get("data")
+            for symbol_info in symbols:
+                if symbol_info["symbol"] == self.symbol:
+                    bid_price, ask_price = await self.get_bid_ask_price()
+                    min_order_value = symbol_info["min-order-value"]
+                    min_order_amt = symbol_info["min-order-amt"]
+                    self.quantity = (round_to(min_order_value / ask_price, min_order_amt) + min_order_amt * 2) * self.quantity_rate
+                    self.min_price = 1 / (10 ** symbol_info["price-precision"])
 
     async def get_bid_ask_price(self):
         ticker, error = await self.http_client.get_ticker(self.symbol)
@@ -227,6 +234,18 @@ class SpotGridStrategy(object):
                 self.sell_orders.remove(delete_order)
 
     async def place_order(self, type, amount, price):
+        balance = await self.get_balance()
+        if balance is None:
+            logger.error("balance is none", caller=self)
+            return
+        if type == OrderType.SELLLIMIT:
+            if balance[self.base_symbol]["trade"] < amount:
+                logger.info("sell place_order interrupt " + self.base_symbol + " not enouth", balance[self.base_symbol]["trade"], amount, caller=self)
+                return
+        if type == OrderType.BUYLIMIT:
+            if balance[self.quote_symbol]["trade"] < amount * price:
+                logger.info("buy place_order interrupt " + self.quote_symbol + " not enouth", balance[self.quote_symbol]["trade"], amount, caller=self)
+                return
         success, error = await self.http_client.place_order(account_id=self.account_id, symbol=self.symbol, type=type.value, amount=amount, price=price)
         if error:
             print("place_order error. error:", error)
@@ -238,3 +257,25 @@ class SpotGridStrategy(object):
                 if order:
                     return order.get("data")
         return None
+
+    async def get_balance(self):
+        success, error = await self.http_client.get_balance(self.account_id)
+        if error:
+            logger.error("get_balance error. error:", error, caller=self)
+            return None
+        base_balance = {"trade": 0, "frozen": 0}
+        quoto_balance = {"trade": 0, "frozen": 0}
+        if success:
+            if success.get("status") == "ok":
+                base_balance = {}
+                quoto_balance = {}
+                balance_list = success.get("data").get("list")
+                for balance in balance_list:
+                    if balance["currency"] == self.base_symbol:
+                        base_balance[balance["type"]] = float(balance["balance"])
+                    if balance["currency"] == self.quote_symbol:
+                        quoto_balance[balance["type"]] = float(balance["balance"])
+        return {
+            self.base_symbol: base_balance,
+            self.quote_symbol: quoto_balance
+        }

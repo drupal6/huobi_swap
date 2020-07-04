@@ -33,6 +33,15 @@ class HuobiRequestSpot:
         self._access_key = access_key
         self._secret_key = secret_key
 
+    async def get_balance(self, account_id):
+        """
+        获得余额
+        :return:
+        """
+        uri = "/v1/account/accounts/%s/balance" % account_id
+        success, error = await self.request("GET", uri, auth=True)
+        return success, error
+
     async def get_ticker(self, symbol):
         """
         聚合行情（Ticker）
