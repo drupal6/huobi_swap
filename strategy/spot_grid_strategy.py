@@ -133,6 +133,7 @@ class SpotGridStrategy(object):
 
         buy_delete_orders = []  # 需要删除买单
         sell_delete_orders = []  # 需要删除的卖单
+        balance = await self.get_balance()
 
         # 买单逻辑,检查成交的情况.
         for buy_order in self.buy_orders:
@@ -148,14 +149,14 @@ class SpotGridStrategy(object):
                     if 0 < sell_price < ask_price:
                         # 防止价格
                         sell_price = round_to(ask_price, float(self.min_price))
-                    new_sell_order = await self.place_order(type=OrderType.SELLLIMIT, amount=quantity, price=sell_price)
+                    new_sell_order = await self.place_order(balance=balance, type=OrderType.SELLLIMIT, amount=quantity, price=sell_price)
                     if new_sell_order:
                         buy_delete_orders.append(buy_order)
                         self.sell_orders.append(new_sell_order)
                     buy_price = round_to(float(check_order.get("price")) * (1 - float(self.gap_percent)), self.min_price)
                     if buy_price > bid_price > 0:
                         buy_price = round_to(buy_price, float(self.min_price))
-                    new_buy_order = await self.place_order(type=OrderType.BUYLIMIT, amount=quantity, price=buy_price)
+                    new_buy_order = await self.place_order(balance=balance, type=OrderType.BUYLIMIT, amount=quantity, price=buy_price)
                     if new_buy_order:
                         self.buy_orders.append(new_buy_order)
                 elif check_order.get('status') == OrderStatus.SUBMITTED.value or check_order.get('status') == OrderStatus.CREATED.value:
@@ -181,7 +182,7 @@ class SpotGridStrategy(object):
                     buy_price = round_to(float(check_order.get("price")) * (1 - float(self.gap_percent)), float(self.min_price))
                     if buy_price > bid_price > 0:
                         buy_price = round_to(buy_price, float(self.min_price))
-                    new_buy_order = await self.place_order(type=OrderType.BUYLIMIT, amount=quantity, price=buy_price)
+                    new_buy_order = await self.place_order(balance=balance, type=OrderType.BUYLIMIT, amount=quantity, price=buy_price)
                     if new_buy_order:
                         sell_delete_orders.append(sell_order)
                         self.buy_orders.append(new_buy_order)
@@ -190,7 +191,7 @@ class SpotGridStrategy(object):
                     if 0 < sell_price < ask_price:
                         # 防止价格
                         sell_price = round_to(ask_price, float(self.min_price))
-                    new_sell_order = await self.place_order(type=OrderType.SELLLIMIT, amount=quantity, price=sell_price)
+                    new_sell_order = await self.place_order(balance=balance, type=OrderType.SELLLIMIT, amount=quantity, price=sell_price)
                     if new_sell_order:
                         self.sell_orders.append(new_sell_order)
 
@@ -207,7 +208,7 @@ class SpotGridStrategy(object):
         if len(self.buy_orders) <= 0:
             if bid_price > 0:
                 price = round_to(bid_price * (1 - float(self.gap_percent)), float(self.min_price))
-                buy_order = await self.place_order(type=OrderType.BUYLIMIT, amount=quantity, price=price)
+                buy_order = await self.place_order(balance=balance, type=OrderType.BUYLIMIT, amount=quantity, price=price)
                 if buy_order:
                     self.buy_orders.append(buy_order)
         elif len(self.buy_orders) > int(self.max_orders): # 最多允许的挂单数量.
@@ -222,7 +223,7 @@ class SpotGridStrategy(object):
         if len(self.sell_orders) <= 0:
             if ask_price > 0:
                 price = round_to(ask_price * (1 + float(self.gap_percent)), float(self.min_price))
-                order = await self.place_order(type=OrderType.SELLLIMIT, amount=quantity, price=price)
+                order = await self.place_order(balance=balance, type=OrderType.SELLLIMIT, amount=quantity, price=price)
                 if order:
                     self.sell_orders.append(order)
         elif len(self.sell_orders) > int(self.max_orders):  # 最多允许的挂单数量.
@@ -233,8 +234,7 @@ class SpotGridStrategy(object):
             if order:
                 self.sell_orders.remove(delete_order)
 
-    async def place_order(self, type, amount, price):
-        balance = await self.get_balance()
+    async def place_order(self, balance, type, amount, price):
         if balance is None:
             logger.error("balance is none", caller=self)
             return
