@@ -165,22 +165,17 @@ class BaseStrategy:
         :return:
         """
         market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
-        market.add_sub(InitKlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
-                                    request=self.request, klines_max_size=self.klines_max_size))
-        market.add_sub(KlineSub(symbol=self.mark_symbol, period=self.period, klines=self.klines,
-                                klines_max_size=self.klines_max_size))
+        market.add_sub(InitKlineSub(strategy=self, period=self.period))
+        market.add_sub(KlineSub(strategy=self, period=self.period))
         if self.auto_curb:
             for period in KILINE_PERIOD:
                 if period == self.period:
                     continue
-                market.add_sub(InitKlineSub(symbol=self.mark_symbol, period=period, klines=self.klines,
-                                            request=self.request, klines_max_size=self.klines_max_size))
-                market.add_sub(KlineSub(symbol=self.mark_symbol, period=period, klines=self.klines,
-                                        klines_max_size=self.klines_max_size))
-        market.add_sub(DepthSub(symbol=self.mark_symbol, step=self.step, depths=self.depths,
-                                depths_max_size=self.depths_max_size))
-        market.add_sub(InitTradeSub(symbol=self.mark_symbol, period=self.period, request=self.request))
-        market.add_sub(TradeSub(symbol=self.mark_symbol, period=self.period, trades=self.trades, trades_max_size=self.trades_max_size))
+                market.add_sub(InitKlineSub(strategy=self, period=period))
+                market.add_sub(KlineSub(strategy=self, period=period))
+        market.add_sub(DepthSub(strategy=self))
+        market.add_sub(InitTradeSub(strategy=self))
+        market.add_sub(TradeSub(strategy=self))
         market.start()
         return market
 
@@ -191,20 +186,12 @@ class BaseStrategy:
         """
         trade = Trade(platform=self.platform, wss=self.wss, access_key=self.access_key,
                       secret_key=self.secret_key, rest_api=self.request)
-        trade.add_sub(InitPositonSub(platform=self.platform, symbol=self.symbol,
-                                     contract_type=self.trade_symbol, position=self.position))
-        trade.add_sub(PositonSub(platform=self.platform, symbol=self.symbol,
-                                 contract_type=self.trade_symbol, position=self.position))
-        trade.add_sub(InitOrderSub(platform=self.platform, symbol=self.symbol, contract_type=self.trade_symbol,
-                                   orders=self.orders, request=self.request))
-        trade.add_sub(OrderSub(platform=self.platform, symbol=self.symbol,
-                               contract_type=self.trade_symbol, orders=self.orders))
-        if self.platform == "swap":
-            trade.add_sub(InitAssetSub(symbol=self.trade_symbol, asset=self.assets))
-            trade.add_sub(AssetSub(symbol=self.trade_symbol, asset=self.assets))
-        else:
-            trade.add_sub(InitAssetSub(symbol=self.symbol, asset=self.assets))
-            trade.add_sub(AssetSub(symbol=self.symbol, asset=self.assets))
+        trade.add_sub(InitPositonSub(strategy=self))
+        trade.add_sub(PositonSub(strategy=self))
+        trade.add_sub(InitOrderSub(strategy=self))
+        trade.add_sub(OrderSub(strategy=self))
+        trade.add_sub(InitAssetSub(strategy=self))
+        trade.add_sub(AssetSub(strategy=self))
         trade.start()
         return trade
 

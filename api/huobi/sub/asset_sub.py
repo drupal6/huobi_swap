@@ -8,13 +8,17 @@ class AssetSub(BaseSub):
     资产变动订阅
     """
 
-    def __init__(self, symbol, asset):
+    def __init__(self, strategy):
         """
         交割合约symbol:btc、bch
         永久合约合约symbol:BTC-USD
         """
-        self._symbol = symbol
-        self._asset = asset
+        self._strategy = strategy
+        self._platform = self._strategy.platform
+        if self._platform == "swap":
+            self._symbol = self._strategy.trade_symbol
+        else:
+            self._symbol = self._strategy.symbol
         self._ch = "accounts.{symbol}".format(symbol=self._symbol)
 
     def ch(self):
@@ -52,13 +56,13 @@ class AssetSub(BaseSub):
                     "liquidation": liquidation,
                     "factor": factor
                 }
-        if assets == self._asset.assets:
+        if assets == self._strategy.assets.assets:
             update = False
         else:
             update = True
-        self._asset.update = update
-        self._asset.assets = assets
-        self._asset.timestamp = data["ts"]
-        logger.info("update assets:", self._asset.__str__(), caller=self)
+        self._strategy.assets.update = update
+        self._strategy.assets.assets = assets
+        self._strategy.assets.timestamp = data["ts"]
+        logger.info("update assets:", self._strategy.assets.__str__(), caller=self)
 
 

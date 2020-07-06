@@ -8,17 +8,17 @@ class InitPositonSub(BaseSub):
     初始化持仓
     """
 
-    def __init__(self, platform, symbol, contract_type, position):
+    def __init__(self, strategy):
         """
         symbol:交割合约btc、bch
         contract_type当周:"this_week", 次周:"next_week", 季度:"quarter"
         symbol:永续合约BTC
         contract_type续合约:"BTC-USD"
         """
-        self._platform = platform
-        self._symbol = symbol
-        self._position = position
-        self._contract_type = contract_type
+        self._strategy = strategy
+        self._platform = self._strategy.platform
+        self._symbol = self._strategy.symbol
+        self._contract_type = self._strategy.trade_symbol
 
     def ch(self):
         return "positions"
@@ -44,16 +44,16 @@ class InitPositonSub(BaseSub):
             volume = int(position_info["volume"])
             if position_info["direction"] == "buy":
                 long_fixed_position = config.markets.get("long_fixed_position", 0)
-                self._position.long_quantity = max(volume - long_fixed_position, 0)
-                self._position.long_avg_price = position_info["cost_hold"]
-                self._position.long_avg_open_price = position_info["cost_open"]
+                self._strategy.position.long_quantity = max(volume - long_fixed_position, 0)
+                self._strategy.position.long_avg_price = position_info["cost_hold"]
+                self._strategy.position.long_avg_open_price = position_info["cost_open"]
             else:
                 short_fixed_position = config.markets.get("short_fixed_position", 0)
-                self._position.short_quantity = max(volume - short_fixed_position, 0)
-                self._position.short_avg_price = position_info["cost_hold"]
-                self._position.short_avg_open_price = position_info["cost_open"]
-            self._position.utime = int(data["ts"])
-        self._position.init = True
+                self._strategy.position.short_quantity = max(volume - short_fixed_position, 0)
+                self._strategy.position.short_avg_price = position_info["cost_hold"]
+                self._strategy.position.short_avg_open_price = position_info["cost_open"]
+            self._strategy.position.utime = int(data["ts"])
+        self._strategy.position.init = True
         if event == "init":
-            logger.info("init position:", self._position.__str__(), caller=self)
+            logger.info("init position:", self._strategy.position.__str__(), caller=self)
 

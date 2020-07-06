@@ -8,16 +8,17 @@ class KlineSub(BaseSub):
     k线订阅
     """
 
-    def __init__(self, symbol, period, klines, klines_max_size=200):
+    def __init__(self, strategy, period):
         """
+        strategy:策略类
         symbol:如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
         symbol:如"BTC_USD"...
         period:1min, 5min, 15min, 30min, 60min,4hour,1day,1week, 1mon
         """
-        self._symbol = symbol
+        self._strategy = strategy
+        self._symbol = self._strategy.mark_symbol
+        self._max_size = self._strategy.klines_max_size
         self._period = period
-        self._klines = klines
-        self._klines_max_size = klines_max_size
         self._ch = "market.{s}.kline.{p}".format(s=self._symbol.upper(), p=self._period)
 
     def ch(self):
@@ -36,7 +37,7 @@ class KlineSub(BaseSub):
         return data
 
     async def call_back(self, channel, data):
-        df = self._klines.get(channel)
+        df = self._strategy.klines.get(channel)
         if df is None:
             logger.info("klines not init. channel:", self._ch)
             return
@@ -46,10 +47,10 @@ class KlineSub(BaseSub):
         new_kline = [{'id': d["id"], 'open': d["open"], 'high': d["high"], 'low': d["low"], 'close': d["close"],
                       'amount': d["amount"]}]
         df = df.append(new_kline, ignore_index=True)
-        if len(df) > self._klines_max_size:
+        if len(df) > self._max_size:
             df.drop(df.index[0], inplace=True)
             df.reset_index(drop=True, inplace=True)
-        self._klines[channel] = df
+        self._strategy.klines[channel] = df
 
 
 

@@ -13,20 +13,21 @@ class InitTradeSub(BaseSub):
     交易历史数据
     """
 
-    def __init__(self, symbol, period, request, trades_max_size=2000):
+    def __init__(self, strategy):
         """
+        strategy:策略类
         symbol:交割合约如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
         symbol:永久合约如"BTC_USD"
         """
-        self._symbol = symbol
-        self._request = request
-        self._period = period
-        self._trades_max_size = trades_max_size
+        self._strategy = strategy
+        self._symbol = self._strategy.mark_symbol
+        self._period = self._strategy.period
+        self._trades_max_size = self._strategy.trades_max_size
         self._ch = "market.{s}.trade.detail".format(s=self._symbol.upper())
         SingleTask.run(self._init)
 
     async def _init(self):
-        success, error = await self._request.get_trades(contract_type=self._symbol, size=self._trades_max_size)
+        success, error = await self._strategy.request.get_trades(contract_type=self._symbol, size=self._trades_max_size)
         if error:
             e = Error("init trades error. channel:" + self._ch)
             logger.error(e, "error:", error, caller=self)
