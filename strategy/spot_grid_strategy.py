@@ -139,13 +139,14 @@ class SpotGridStrategy(object):
         for buy_order in self.buy_orders:
             check_order, error = await self.http_client.get_order(buy_order.get("id"))
             if check_order:
-                if check_order.get('status') == OrderStatus.CANCELED.value:
-                    buy_delete_orders.append(buy_order)
-                    print(f"buy order status was canceled: {check_order.get('status')}")
-                elif check_order.get('status') == OrderStatus.FILLED.value:
+                order_data = check_order.get("data")
+                if order_data.get('status') == OrderStatus.CANCELED.value:
+                    buy_delete_orders.append(order_data)
+                    print(f"buy order status was canceled: {order_data.get('status')}")
+                elif order_data.get('status') == OrderStatus.FILLED.value:
                     # 买单成交，挂卖单.
-                    print(f"买单成交时间: {datetime.now()}, 价格: {check_order.get('price')}, 数量: {check_order.get('origQty')}")
-                    sell_price = round_to(float(check_order.get("price")) * (1 + float(self.gap_percent)), float(self.min_price))
+                    print(f"买单成交时间: {datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('origQty')}")
+                    sell_price = round_to(float(order_data.get("price")) * (1 + float(self.gap_percent)), float(self.min_price))
                     if 0 < sell_price < ask_price:
                         # 防止价格
                         sell_price = round_to(ask_price, float(self.min_price))
@@ -153,16 +154,16 @@ class SpotGridStrategy(object):
                     if new_sell_order:
                         buy_delete_orders.append(buy_order)
                         self.sell_orders.append(new_sell_order)
-                    buy_price = round_to(float(check_order.get("price")) * (1 - float(self.gap_percent)), self.min_price)
+                    buy_price = round_to(float(order_data.get("price")) * (1 - float(self.gap_percent)), self.min_price)
                     if buy_price > bid_price > 0:
                         buy_price = round_to(buy_price, float(self.min_price))
                     new_buy_order = await self.place_order(balance=balance, type=OrderType.BUYLIMIT, amount=quantity, price=buy_price)
                     if new_buy_order:
                         self.buy_orders.append(new_buy_order)
-                elif check_order.get('status') == OrderStatus.SUBMITTED.value or check_order.get('status') == OrderStatus.CREATED.value:
+                elif order_data.get('status') == OrderStatus.SUBMITTED.value or order_data.get('status') == OrderStatus.CREATED.value:
                     print("buy order status is: New")
                 else:
-                    print(f"buy order status is not above options: {check_order.get('status')}")
+                    print(f"buy order status is not above options: {order_data.get('status')}")
 
         # 过期或者拒绝的订单删除掉.
         for delete_order in buy_delete_orders:
@@ -172,14 +173,15 @@ class SpotGridStrategy(object):
         for sell_order in self.sell_orders:
             check_order, error = self.http_client.get_order(sell_order.get('id'))
             if check_order:
-                if check_order.get('status') == OrderStatus.CANCELED.value:
-                    sell_delete_orders.append(sell_order)
-                    print(f"sell order status was canceled: {check_order.get('status')}")
-                elif check_order.get('status') == OrderStatus.FILLED.value:
+                order_data = check_order.get("data")
+                if order_data.get('status') == OrderStatus.CANCELED.value:
+                    sell_delete_orders.append(sell_order.get("data"))
+                    print(f"sell order status was canceled: {order_data.get('status')}")
+                elif order_data.get('status') == OrderStatus.FILLED.value:
                     print(
-                        f"卖单成交时间: {datetime.now()}, 价格: {check_order.get('price')}, 数量: {check_order.get('origQty')}")
+                        f"卖单成交时间: {datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('origQty')}")
                     # 卖单成交，先下买单.
-                    buy_price = round_to(float(check_order.get("price")) * (1 - float(self.gap_percent)), float(self.min_price))
+                    buy_price = round_to(float(order_data.get("price")) * (1 - float(self.gap_percent)), float(self.min_price))
                     if buy_price > bid_price > 0:
                         buy_price = round_to(buy_price, float(self.min_price))
                     new_buy_order = await self.place_order(balance=balance, type=OrderType.BUYLIMIT, amount=quantity, price=buy_price)
@@ -187,7 +189,7 @@ class SpotGridStrategy(object):
                         sell_delete_orders.append(sell_order)
                         self.buy_orders.append(new_buy_order)
 
-                    sell_price = round_to(float(check_order.get("price")) * (1 + float(self.gap_percent)), float(self.min_price))
+                    sell_price = round_to(float(order_data.get("price")) * (1 + float(self.gap_percent)), float(self.min_price))
                     if 0 < sell_price < ask_price:
                         # 防止价格
                         sell_price = round_to(ask_price, float(self.min_price))
@@ -195,10 +197,10 @@ class SpotGridStrategy(object):
                     if new_sell_order:
                         self.sell_orders.append(new_sell_order)
 
-                elif check_order.get('status') == OrderStatus.SUBMITTED.value or check_order.get('status') == OrderStatus.CREATED.value:
+                elif order_data.get('status') == OrderStatus.SUBMITTED.value or order_data.get('status') == OrderStatus.CREATED.value:
                     print("sell order status is: New")
                 else:
-                    print(f"sell order status is not in above options: {check_order.get('status')}")
+                    print(f"sell order status is not in above options: {order_data.get('status')}")
 
         # 过期或者拒绝的订单删除掉.
         for delete_order in sell_delete_orders:
