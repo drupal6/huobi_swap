@@ -33,7 +33,9 @@ class MsgUtil:
 
     @classmethod
     def get_status(cls, status):
-        if status == 4:
+        if status == 3:
+            return "报单"
+        elif status == 4:
             return "部分成交"
         elif status == 5:
             return "部分成交已撤单"
