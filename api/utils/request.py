@@ -73,12 +73,13 @@ class AsyncHttpRequests(object):
             result = await response.text()
             # logger.warn("response data is not json format!", "method:", method, "url:", url, "headers:", headers,
             #             "params:", params, "body:", body, "data:", data, "code:", code, "result:", result, caller=cls)
-        if len(result) < 500:
+        result_str = json.dumps(result)
+        if len(result_str) < 500:
             logger.info("method:", method, "url:", url, "headers:", headers, "params:", params, "body:", body,
-                         "data:", data, "code:", code, "result:", json.dumps(result), caller=cls)
+                         "data:", data, "code:", code, "result:", result_str, caller=cls)
         else:
             logger.info("method:", method, "url:", url, "headers:", headers, "params:", params, "body:", body,
-                         "data:", data, "code:", code, "result:", len(json.dumps(result)), caller=cls)
+                         "data:", data, "code:", code, "result:", len(result_str), caller=cls)
         return code, result, None
 
     @classmethod
