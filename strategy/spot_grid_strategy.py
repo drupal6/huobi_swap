@@ -59,7 +59,7 @@ class SpotGridStrategy(object):
         self.sell_orders = []  # 卖单
         self.account_id = None
 
-        LoopRunTask.register(self.grid_trader, 10)
+        LoopRunTask.register(self.grid_trader, 50)
 
     async def init_data(self):
         success, error = await self.http_client.get_accounts()
