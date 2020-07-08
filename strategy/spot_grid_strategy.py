@@ -149,7 +149,7 @@ class SpotGridStrategy(object):
                     print(f"buy order status was canceled: {order_data.get('state')}")
                 elif order_data.get('state') == OrderStatus.FILLED.value:
                     # 买单成交，挂卖单.
-                    print(f"买单成交时间: {datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('amount')}")
+                    print(f"买单成交时间: {datetime.datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('amount')}")
                     sell_price = round_to(float(order_data.get("price")) * (1 + float(self.gap_percent)), float(self.min_price))
                     if 0 < sell_price < ask_price:
                         # 防止价格
@@ -183,7 +183,7 @@ class SpotGridStrategy(object):
                     print(f"sell order status was canceled: {order_data.get('state')}")
                 elif order_data.get('state') == OrderStatus.FILLED.value:
                     print(
-                        f"卖单成交时间: {datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('amount')}")
+                        f"卖单成交时间: {datetime.datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('amount')}")
                     # 卖单成交，先下买单.
                     buy_price = round_to(float(order_data.get("price")) * (1 - float(self.gap_percent)), float(self.min_price))
                     if buy_price > bid_price > 0:
