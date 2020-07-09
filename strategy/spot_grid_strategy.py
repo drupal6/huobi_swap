@@ -143,9 +143,12 @@ class SpotGridStrategy(object):
         for buy_order in self.buy_orders:
             check_order, error = await self.http_client.get_order(buy_order.get("id"))
             if check_order:
+                if check_order.get("status") != "ok":
+                    buy_delete_orders.append(buy_order)
+                    print(f"order ecord invalid: {order_data.get('status')}")
                 order_data = check_order.get("data")
                 if order_data.get('state') == OrderStatus.CANCELED.value:
-                    buy_delete_orders.append(order_data)
+                    buy_delete_orders.append(buy_order)
                     print(f"buy order status was canceled: {order_data.get('state')}")
                 elif order_data.get('state') == OrderStatus.FILLED.value:
                     # 买单成交，挂卖单.
@@ -177,9 +180,12 @@ class SpotGridStrategy(object):
         for sell_order in self.sell_orders:
             check_order, error = await self.http_client.get_order(sell_order.get('id'))
             if check_order:
+                if check_order.get("status") != "ok":
+                    sell_delete_orders.append(sell_order)
+                    print(f"order ecord invalid: {order_data.get('status')}")
                 order_data = check_order.get("data")
                 if order_data.get('state') == OrderStatus.CANCELED.value:
-                    sell_delete_orders.append(sell_order.get("data"))
+                    sell_delete_orders.append(sell_order)
                     print(f"sell order status was canceled: {order_data.get('state')}")
                 elif order_data.get('state') == OrderStatus.FILLED.value:
                     print(
