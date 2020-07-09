@@ -55,14 +55,10 @@ class BaseStrategy:
         self.secret_key = config.accounts.get("secret_key")
         self.test = config.accounts.get("is_test", True)
 
-        self.klines_max_size = config.markets.get("klines_max_size")
-        self.depths_max_size = config.markets.get("depths_max_size")
-        self.trades_max_size = config.markets.get("trades_max_size")
-
         self.symbol = config.markets.get("symbol")
         self.mark_symbol = config.markets.get("mark_symbol")
         self.trade_symbol = config.markets.get("trade_symbol")
-        self.period = config.markets.get("period")
+
         self.step = config.markets.get("step")
         self.lever_rate = config.markets.get("lever_rate")
         self.price_tick = config.markets.get("price_tick")
@@ -91,23 +87,12 @@ class BaseStrategy:
 
         if not self.platform:
             e = Error("platform miss")
-        if not self.klines_max_size:
-            e = Error("klines_max_size miss")
-        if not self.depths_max_size:
-            e = Error("depths_max_size miss")
-        if not self.trades_max_size:
-            e = Error("trades_max_size miss")
-
         if not self.symbol:
             e = Error("symbol miss")
         if not self.mark_symbol:
             e = Error("mark_symbol miss")
         if not self.trade_symbol:
             e = Error("trade_symbol miss")
-        if not self.period:
-            e = Error("period miss")
-        if not self.step:
-            e = Error("step miss")
         if not self.lever_rate:
             e = Error("lever_rate miss")
         if not self.price_tick:
@@ -128,6 +113,12 @@ class BaseStrategy:
         if e:
             logger.error(e, caller=self)
             return
+
+        self.klines_max_size = 0
+        self.depths_max_size = 0
+        self.trades_max_size = 0
+        self.period = "5min"
+        self.step = "step2"
 
         # 市场数据
         self.klines = {}
@@ -154,7 +145,8 @@ class BaseStrategy:
         else:
             self.request = HuobiRequest(host=self.host, access_key=self.access_key, secret_key=self.secret_key)
 
-        self.market = self.init_market()
+        if len(config.mark_sub) > 0:
+            self.market = self.init_market()
         self.trade = self.init_trade()
         # 运行周期
         LoopRunTask.register(self.on_ticker, self.loop_interval)
@@ -164,18 +156,30 @@ class BaseStrategy:
         初始和监听交易数据
         :return:
         """
+        mark_sub_param = config.mark_sub
         market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
-        market.add_sub(InitKlineSub(strategy=self, period=self.period))
-        market.add_sub(KlineSub(strategy=self, period=self.period))
-        if self.auto_curb:
-            for period in KILINE_PERIOD:
-                if period == self.period:
-                    continue
-                market.add_sub(InitKlineSub(strategy=self, period=period))
-                market.add_sub(KlineSub(strategy=self, period=period))
-        market.add_sub(DepthSub(strategy=self))
-        market.add_sub(InitTradeSub(strategy=self))
-        market.add_sub(TradeSub(strategy=self))
+        if "kline" in mark_sub_param:
+            kline_config = mark_sub_param.get("kline")
+            self.klines_max_size = kline_config["max_size"]
+            self.period = kline_config["period"]
+            market.add_sub(InitKlineSub(strategy=self, period=self.period))
+            market.add_sub(KlineSub(strategy=self, period=self.period))
+            if self.auto_curb:
+                for period in KILINE_PERIOD:
+                    if period == self.period:
+                        continue
+                    market.add_sub(InitKlineSub(strategy=self, period=period))
+                    market.add_sub(KlineSub(strategy=self, period=period))
+        if "depth" in mark_sub_param:
+            depth_config = mark_sub_param.get("depth")
+            self.depths_max_size = depth_config["max_size"]
+            self.step = depth_config["step"]
+            market.add_sub(DepthSub(strategy=self))
+        if "trade" in mark_sub_param:
+            trade_config = mark_sub_param.get("trade")
+            self.trades_max_size = trade_config["max_size"]
+            market.add_sub(InitTradeSub(strategy=self, period=trade_config["period"]))
+            market.add_sub(TradeSub(strategy=self, period=trade_config["period"]))
         market.start()
         return market
 

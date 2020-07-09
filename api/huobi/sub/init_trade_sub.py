@@ -13,7 +13,7 @@ class InitTradeSub(BaseSub):
     交易历史数据
     """
 
-    def __init__(self, strategy):
+    def __init__(self, strategy, period):
         """
         strategy:策略类
         symbol:交割合约如"BTC_CW"表示BTC当周合约，"BTC_NW"表示BTC次周合约，"BTC_CQ"表示BTC季度合约
@@ -21,7 +21,7 @@ class InitTradeSub(BaseSub):
         """
         self._strategy = strategy
         self._symbol = self._strategy.mark_symbol
-        self._period = self._strategy.period
+        self._period = period
         self._trades_max_size = self._strategy.trades_max_size
         self._ch = "market.{s}.trade.detail".format(s=self._symbol.upper())
         SingleTask.run(self._init)

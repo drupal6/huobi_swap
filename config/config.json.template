@@ -19,18 +19,27 @@
         "secret_key": "xxxxxx",
         "is_test": true  # 是否是测试 true是 false不是
     },
+    "MARK_SUB": {  # 市场行情监听
+        "kline":{
+            "period": "1min",  # kline周期
+            "max_size": 200  # 获取的k大小
+        },
+        "depth": {
+            "step": "step2",  # 市场深度级别
+            "max_size": 100  # 保存深度大小
+        },
+        "trade": {
+            "max_size": 100, # 保存交易数据大小
+            "period": "1min"
+        }
+    },
     "MARKETS": {
         "port":8080,
         "platform": "swap",   # 火币那种合约 jiaoge交割合约 swap永续合约
         "strategy": "BollStrategy",  # 选择那种交易策略
-        "klines_max_size": 200,  # 获取的k大小
-        "depths_max_size": 100,  # 保存深度大小
-        "trades_max_size": 100,  # 保存交易数据大小
         "symbol": "eth",  # 交割合约小写 永续合约大写
         "mark_symbol": "ETH_CW",  # 交割合约BTC_CW BTC_NW BTC_CQ  永续合约 BTC-USD
         "trade_symbol": "quarter", # 交割合约this_week next_week quarter  永续合约 BTC-USD
-        "period": "1min",  # kline周期
-        "step": "step6",  # 市场深度级别
         "lever_rate": 20,  # 倍数
         "price_tick": 0.01,  # 价格保留小数位
         "loop_interval": 5,  # 心跳时间
