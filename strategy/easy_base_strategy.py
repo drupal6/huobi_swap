@@ -32,7 +32,7 @@ import numpy as np
 from api.model.const import TradingCurb
 
 
-class BaseStrategy:
+class EasyBaseStrategy:
     """
     基础策略类
     交割合约：
@@ -71,6 +71,7 @@ class BaseStrategy:
         self.short_position_weight_rate = config.markets.get("short_position_weight_rate")
         self.long_fixed_position = config.markets.get("long_fixed_position", 0)
         self.short_fixed_position = config.markets.get("short_fixed_position", 0)
+
 
         e = None
         if not self.host:
@@ -131,11 +132,6 @@ class BaseStrategy:
 
         self.trade_money = 1  # 10USDT.  每次交易的金额, 修改成自己下单的金额.
         self.min_volume = 1  # 最小的交易数量(张).
-        self.short_trade_size = 0
-        self.long_trade_size = 0
-        self.last_price = 0
-        self.long_status = 0  # 0不处理  1做多 -1平多
-        self.short_status = 0  # 0不处理  1做空 -1 平空
         self.last_order = {}  # 最近下单记录
 
         # 初始http链接
@@ -203,45 +199,10 @@ class BaseStrategy:
         if not before_state:  # 策略之前执行
             return
         self.strategy_handle()  # 策略计算
-        await self.after_strategy()   # 策略之后执行
 
     async def before_strategy(self):
-        # 撤单
-        orders = copy.copy(self.orders)
-        ut_time = tools.get_cur_timestamp_ms()
-        if len(orders) > 0:
-            for no in orders.values():
-                if ut_time >= no.ctime + self.order_cancel_time:
-                    if self.platform == "swap":
-                        await self.trade.revoke_order(self.trade_symbol.upper(), self.trade_symbol, no.order_no)
-                    else:
-                        await self.trade.revoke_order(self.symbol.upper(), self.trade_symbol, no.order_no)
-
-        # 检查k是否初始完了
-        if self.auto_curb:
-            if len(self.klines) != len(KILINE_PERIOD):  # k线数据没有
-                return False
-        else:
-            if len(self.klines) != 1:  # k线数据没有
-                return False
-        if len(self.trades) == 0:  # 最近成交记录没有
-            return False
         if not self.position.init:
             return False
-
-        # 设置计算参数
-        self.long_status = 0
-        self.short_status = 0
-        self.long_trade_size = 0
-        self.short_trade_size = 0
-        self.last_price = 0
-        trades = copy.copy(self.trades)
-        last_trades = trades.get("market." + self.mark_symbol + ".trade.detail")
-        if last_trades and len(last_trades) > 0:
-            self.last_price = round_to(float(last_trades[-1].price), self.price_tick)
-        if self.last_price <= 0:  # 最近一次的成交价格没有
-            return False
-        return True
 
     def strategy_handle(self):
         """
@@ -250,64 +211,11 @@ class BaseStrategy:
         """
         pass
 
-    async def after_strategy(self):
-        """
-        下单或者平仓
-        :return:
-        """
-        # 判断装填和数量是否相等
-        if self.long_status == 1 and self.long_trade_size < self.min_volume:
-            self.long_status = 0
-            self.long_trade_size = 0
-        if self.short_status == 1 and self.short_trade_size < self.min_volume:
-            self.short_status = 0
-            self.short_trade_size = 0
-        if self.long_status == 0 and self.short_status == 0:
-            return
-        self.long_trade_size = self.long_trade_size * self.long_position_weight_rate
-        self.short_trade_size = self.short_trade_size * self.short_position_weight_rate
-        position = copy.copy(self.position)
-        if self.long_status == 1:  # 开多
-            if self.long_trade_size > position.long_quantity:   # 开多加仓
-                amount = self.long_trade_size - position.long_quantity
-                if amount >= self.min_volume:
-                    price = self.last_price * (1 + self.price_offset)
-                    price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action=ORDER_ACTION_BUY,  price=price, quantity=amount)
-
-            elif self.long_trade_size < position.long_quantity:  # 开多减仓
-                amount = position.long_quantity - self.long_trade_size
-                if abs(amount) >= self.min_volume:
-                    price = self.last_price * (1 - self.price_offset)
-                    price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=amount)
-
-        if self.short_status == 1:  # 开空
-            if self.short_trade_size > position.short_quantity:  # 开空加仓
-                amount = self.short_trade_size - position.short_quantity
-                if amount >= self.min_volume:
-                    price = self.last_price * (1 - self.price_offset)
-                    price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=-amount)
-
-            elif self.short_trade_size < position.short_quantity:  # 开空减仓
-                amount = position.short_quantity - self.short_trade_size
-                if abs(amount) >= self.min_volume:
-                    price = self.last_price * (1 + self.price_offset)
-                    price = round_to(price, self.price_tick)
-                    ret = await self.create_order(action=ORDER_ACTION_BUY, price=price, quantity=-amount)
-
-        if self.long_status == -1:  # 平多
-            if position.long_quantity > 0:
-                price = self.last_price * (1 - self.price_offset)
-                price = round_to(price, self.price_tick)
-                ret = await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=position.long_quantity)
-
-        if self.short_status == -1:  # 平空
-            if position.short_quantity > 0:
-                price = self.last_price * (1 + self.price_offset)
-                price = round_to(price, self.price_tick)
-                ret = await self.create_order(action=ORDER_ACTION_BUY, price=price, quantity=-position.short_quantity)
+    async def revoke_order(self, order_no):
+        if self.platform == "swap":
+            await self.trade.revoke_order(self.trade_symbol.upper(), self.trade_symbol, order_no)
+        else:
+            await self.trade.revoke_order(self.symbol.upper(), self.trade_symbol, order_no)
 
     async def create_order(self, action, price, quantity):
         if not self.test:
