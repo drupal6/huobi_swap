@@ -69,7 +69,7 @@ class NewGridStrategy(EasyBaseStrategy):
         if buy_short_size == 0 and ask_price > 0 and self.can_user_amount >= short_amount > short_quantity:
             # 开空单
             price = round_to(ask_price * (1 + per), self.price_tick)
-            await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=short_amount)
+            await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=-short_amount)
         elif buy_short_size > self.same_order_limit:
             # 有多个开空单时要留下最小的
             self.buy_short_orders.sort(key=lambda x: float(x.price), reverse=True)  # 降序
@@ -80,7 +80,7 @@ class NewGridStrategy(EasyBaseStrategy):
             # 平多单
             if position.long_avg_open_price and position.long_avg_open_price > 0 and position.long_quantity >= long_amount:
                 price = max(ask_price, round_to(position.long_avg_open_price * (1 + per), self.price_tick))
-                await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=-long_amount)
+                await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=long_amount)
         elif sell_long_size > self.same_order_limit:
             # 有多个平多单时要留下最小的
             self.sell_long_orders.sort(key=lambda x: float(x.price), reverse=True)  # 降序
