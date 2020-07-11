@@ -137,6 +137,7 @@ class BaseStrategy:
         self.long_status = 0  # 0不处理  1做多 -1平多
         self.short_status = 0  # 0不处理  1做空 -1 平空
         self.last_order = {}  # 最近下单记录
+        self.contract_size = 0  # 面值
 
         # 初始http链接
         if self.platform == "swap":

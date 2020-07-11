@@ -13,6 +13,7 @@ from api.huobi.sub.init_order_sub import InitOrderSub
 from api.huobi.sub.init_asset_sub import InitAssetSub
 from api.huobi.sub.init_position_sub import InitPositonSub
 from api.huobi.sub.init_trade_sub import InitTradeSub
+from api.huobi.sub.init_info_sub import InitInfoSub
 from api.model.trade import Trade
 from api.model.asset import Asset
 from api.model.position import Position
@@ -133,6 +134,7 @@ class EasyBaseStrategy:
         self.trade_money = 1  # 10USDT.  每次交易的金额, 修改成自己下单的金额.
         self.min_volume = 1  # 最小的交易数量(张).
         self.last_order = {}  # 最近下单记录
+        self.contract_size = 0  # 面值
 
         # 初始http链接
         if self.platform == "swap":
@@ -153,6 +155,7 @@ class EasyBaseStrategy:
         """
         mark_sub_param = config.mark_sub
         market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
+        market.add_sub(InitInfoSub(strategy=self))
         if "kline" in mark_sub_param:
             kline_config = mark_sub_param.get("kline")
             self.klines_max_size = kline_config["max_size"]
@@ -178,6 +181,36 @@ class EasyBaseStrategy:
         market.start()
         return market
 
+    def get_can_user_amoun(self, price):
+        if price == 0:
+            return 0
+        asserts = copy.copy(self.assets)
+        assert_data = asserts.assets.get(self.symbol)
+        if assert_data:
+            return int(float(assert_data["free"]) * price / self.lever_rate)
+        return 0
+
+    def ask_bid_price(self):
+        ask_price = 0
+        bid_price = 0
+        ds = copy.copy(self.depths)
+        if len(ds) == 0:
+            return ask_price, bid_price
+        data = ds["market.{s}.depth.{d}".format(s=self.mark_symbol.upper(), d=config.mark_sub["depth"]["step"])]
+        if len(data) == 0:
+            return ask_price, bid_price
+        ut_time = tools.get_cur_timestamp_ms()
+        if data[-1].timestamp + 30000 < ut_time:
+            logger.error("depth not update too long, magin:", (ut_time - data[-1].timestamp), caller=self)
+            return ask_price, bid_price
+        ask_data = data[-1].asks
+        bid_data = data[-1].bids
+        if ask_data:
+            ask_price = float(ask_data[0][0])
+        if bid_data:
+            bid_price = float(bid_data[0][0])
+        return ask_price, bid_price
+
     def init_trade(self):
         """
         初始和监听市场数据
@@ -198,13 +231,14 @@ class EasyBaseStrategy:
         before_state = await self.before_strategy()
         if not before_state:  # 策略之前执行
             return
-        self.strategy_handle()  # 策略计算
+        await self.strategy_handle()  # 策略计算
 
     async def before_strategy(self):
         if not self.position.init:
             return False
+        return True
 
-    def strategy_handle(self):
+    async def strategy_handle(self):
         """
         策略重写
         :return:

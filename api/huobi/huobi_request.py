@@ -50,7 +50,7 @@ class HuobiRequest:
         success, error = await self.request("GET", uri, params)
         return success, error
 
-    async def get_delivery_info(self, symbol=None, contract_type=None, contract_code=None):
+    async def get_info(self, symbol=None, contract_type=None, contract_code=None):
         """
         合约信息
         :param symbol: "BTC","ETH"...

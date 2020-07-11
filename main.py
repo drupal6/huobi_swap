@@ -27,6 +27,9 @@ def initialize():
     elif strategy == "GridStrategy":
         from strategy.grid_strategy import GridStrategy
         return GridStrategy()
+    elif strategy == "NewGridStrategy":
+        from strategy.new_grid_strategy import NewGridStrategy
+        return NewGridStrategy()
     if strategy == "SpotGridStrategy":
         SpotGridStrategy()
     else:
