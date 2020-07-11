@@ -49,7 +49,10 @@ class NewGridStrategy(EasyBaseStrategy):
         long_amount = self.min_volume * self.long_position_weight_rate
         short_amount = self.min_volume * self.short_position_weight_rate
         self.can_user_amount = self.get_can_user_amoun(bid_price)
-        if buy_long_size == 0 and bid_price > 0 and self.can_user_amount > long_amount > position.long_quantity:
+        long_quantity = 0
+        if position.long_quantity:
+            long_quantity = position.long_quantity
+        if buy_long_size == 0 and bid_price > 0 and self.can_user_amount >= long_amount > long_quantity:
             # 开多单
             self.can_user_amount = self.can_user_amount - long_amount
             price = round_to(bid_price * (1 - per), self.price_tick)
@@ -60,7 +63,10 @@ class NewGridStrategy(EasyBaseStrategy):
             for i in range(0, buy_long_size - 1):
                 await self.revoke_order(buy_long_orders[i].order_no)
 
-        if buy_short_size == 0 and ask_price > 0 and self.can_user_amount > short_amount > position.short_quantity:
+        short_quantity = 0
+        if position.short_quantity:
+            short_quantity = position.short_quantity
+        if buy_short_size == 0 and ask_price > 0 and self.can_user_amount >= short_amount > short_quantity:
             # 开空单
             price = round_to(ask_price * (1 + per), self.price_tick)
             await self.create_order(action=ORDER_ACTION_SELL, price=price, quantity=short_amount)

@@ -182,12 +182,12 @@ class EasyBaseStrategy:
         return market
 
     def get_can_user_amoun(self, price):
-        if price == 0:
+        if price == 0 or self.contract_size == 0:
             return 0
         asserts = copy.copy(self.assets)
         assert_data = asserts.assets.get(self.symbol)
         if assert_data:
-            return int(float(assert_data["free"]) * price / self.lever_rate)
+            return int(float(assert_data["free"]) * price * self.lever_rate/self.contract_size)
         return 0
 
     def ask_bid_price(self):
