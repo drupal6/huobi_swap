@@ -64,7 +64,7 @@ class SpotGridStrategy(object):
     async def init_data(self):
         success, error = await self.http_client.get_accounts()
         if error:
-            print("init account_id error. error:", error)
+            logger.error("init account_id error. error:", error, caller=self)
             exit(0)
         if success.get("status") == "ok":
             data = success.get("data")
@@ -72,24 +72,21 @@ class SpotGridStrategy(object):
                 if d.get("type") == self.platform:
                     self.account_id = d.get("id")
         if not self.account_id:
-            print("init account_id error. msg:", success)
+            logger.error("init account_id error. error:", success, caller=self)
             exit(0)
         order_data, error = await self.http_client.get_open_orders(account_id=self.account_id, symbol=self.symbol)
         if error:
-            print("init get_open_orders error. msg:", error)
+            logger.error("init get_open_orders error. msg:", error, caller=self)
         if order_data:
-            print("order_data", order_data)
             open_orders = order_data.get("data")
             for order in open_orders:
                 if order.get("type") == "buy-limit":
                     self.buy_orders.append(order)
                 elif order.get("type") == "sell-limit":
                     self.sell_orders.append(order)
-                # order_id = order["id"]
-                # await self.http_client.cancel_order(order_id)
         symbols_data, err = await self.http_client.get_symbols()
         if err:
-            print("get_symbols error. error:", err)
+            logger.error("get_symbols error. error:", err, caller=self)
         if symbols_data:
             symbols = symbols_data.get("data")
             for symbol_info in symbols:
@@ -105,7 +102,7 @@ class SpotGridStrategy(object):
         bid_price = 0
         ask_price = 0
         if error:
-            print("init get_bid_ask_price error. error:", error)
+            logger.error("init get_bid_ask_price error. error:", error, caller=self)
             return
         if ticker.get("status") == "ok":
             data = ticker.get("tick")
@@ -113,7 +110,7 @@ class SpotGridStrategy(object):
                 bid_price = float(data.get('bid', [0, 0])[0])
                 ask_price = float(data.get('ask', [0, 0])[0])
         else:
-            print("get_ticker error.", ticker)
+            logger.error("get_ticker error.", ticker, caller=self)
         return bid_price, ask_price
 
     async def grid_trader(self, *args, **kwargs):
@@ -124,16 +121,11 @@ class SpotGridStrategy(object):
         if not self.account_id:
             await self.init_data()
         bid_price, ask_price = await self.get_bid_ask_price()
-        print(f"bid_price: {bid_price}, ask_price: {ask_price}")
 
-        # quantity = round_to(float(self.quantity), float(self.min_qty))
         quantity = self.quantity
 
         self.buy_orders.sort(key=lambda x: float(x['price']), reverse=True)  # 最高价到最低价.
         self.sell_orders.sort(key=lambda x: float(x['price']), reverse=True)  # 最高价到最低价.
-        print(f"buy orders: {self.buy_orders}")
-        print("------------------------------")
-        print(f"sell orders: {self.sell_orders}")
 
         buy_delete_orders = []  # 需要删除买单
         sell_delete_orders = []  # 需要删除的卖单
@@ -145,14 +137,11 @@ class SpotGridStrategy(object):
             if check_order:
                 if check_order.get("status") != "ok":
                     buy_delete_orders.append(buy_order)
-                    print(f"order ecord invalid: {order_data.get('status')}")
                 order_data = check_order.get("data")
                 if order_data.get('state') == OrderStatus.CANCELED.value:
                     buy_delete_orders.append(buy_order)
-                    print(f"buy order status was canceled: {order_data.get('state')}")
                 elif order_data.get('state') == OrderStatus.FILLED.value:
                     # 买单成交，挂卖单.
-                    print(f"买单成交时间: {datetime.datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('amount')}")
                     sell_price = round_to(float(order_data.get("price")) * (1 + float(self.gap_percent)), float(self.min_price))
                     if 0 < sell_price < ask_price:
                         # 防止价格
@@ -182,14 +171,10 @@ class SpotGridStrategy(object):
             if check_order:
                 if check_order.get("status") != "ok":
                     sell_delete_orders.append(sell_order)
-                    print(f"order ecord invalid: {order_data.get('status')}")
                 order_data = check_order.get("data")
                 if order_data.get('state') == OrderStatus.CANCELED.value:
                     sell_delete_orders.append(sell_order)
-                    print(f"sell order status was canceled: {order_data.get('state')}")
                 elif order_data.get('state') == OrderStatus.FILLED.value:
-                    print(
-                        f"卖单成交时间: {datetime.datetime.now()}, 价格: {order_data.get('price')}, 数量: {order_data.get('amount')}")
                     # 卖单成交，先下买单.
                     buy_price = round_to(float(order_data.get("price")) * (1 - float(self.gap_percent)), float(self.min_price))
                     if buy_price > bid_price > 0:
@@ -260,12 +245,12 @@ class SpotGridStrategy(object):
                 return
         success, error = await self.http_client.place_order(account_id=self.account_id, symbol=self.symbol, type=type.value, amount=amount, price=price)
         if error:
-            print("place_order error. error:", error)
+            logger.error("place_order error. error:", error, caller=self)
         if success:
             if success.get("data"):
                 order, error1 = await self.http_client.get_order(success.get("data"))
                 if error1:
-                    print("get_order error. error:", error1)
+                    logger.error("get_order error. error:", error, caller=self)
                 if order:
                     return order.get("data")
         return None
