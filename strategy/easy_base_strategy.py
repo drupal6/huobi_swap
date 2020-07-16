@@ -234,8 +234,8 @@ class EasyBaseStrategy:
         await self.strategy_handle()  # 策略计算
 
     async def before_strategy(self):
-        if not self.position.init:
-            return False
+        # if not self.position.init:
+        #     return False
         return True
 
     async def strategy_handle(self):

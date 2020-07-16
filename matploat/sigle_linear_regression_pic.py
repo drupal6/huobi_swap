@@ -36,7 +36,7 @@ class MatPlot:
             df["k"] = np.nan
             df["b"] = np.nan
             df["zero"] = 0
-            df["Sma"] = talib.SMA(df["Close"], timeperiod=10)
+
             df["Date"] = pd.to_datetime(df["Date"], unit="s")
             df.set_index(["Date"], inplace=True)
             MatPlot.show(df)
@@ -45,40 +45,44 @@ class MatPlot:
     def show(cls, df):
         df_lenght = len(df)
         period = 10
+        df["Sma"] = talib.SMA(df["Close"], timeperiod=period)
         y_d = deque(maxlen=period)
-        for i in range(0, df_lenght):
-            x_x = np.arange(df.iloc[i]["Close"], df.iloc[i]["Close"] + period * 1, 1)
+        x_x = np.arange(1, period + 1, 1)
+        for i in range(period, df_lenght):
             if len(y_d) == period and i < df_lenght:
                 leading_y, k, b = sigle_linear_regression_util.leading_y(x_x, y_d)
                 df.iloc[i, 5] = leading_y
                 df.iloc[i, 6] = k
                 df.iloc[i, 7] = b
-            y_d.append(df.iloc[i]["Close"])
-
+            y_d.append(df.iloc[i]["Sma"])
+        high_values = df["High"]
         price_values = df["Close"]
+        low_values = df["Low"]
         k_values = df["k"]
         b_values = df["b"]
         leading_values = df["Leading"]
         zero_values = df["zero"]
 
         # 设置画布，纵向排列的三个子图
-        fig, ax = plt.subplots(2, 1)
+        fig, ax = plt.subplots(1, 1)
         # 设置标签显示中文
         plt.rcParams['font.sans-serif'] = ['SimHei']
         plt.rcParams['axes.unicode_minus'] = False
         # 调整子图的间距，hspace表示高(height)方向的间距
         plt.subplots_adjust(hspace=.1)
         # 设置第一子图的y轴信息及标题
-        ax[0].set_ylabel('Close price in ￥')
-        ax[0].set_title('A_Stock %s MACD Indicator' % ("test"))
-        price_values.plot(ax=ax[0], color='g', lw=1., legend=True, use_index=False)
-        leading_values.plot(ax=ax[0], color='r', lw=1., legend=True, use_index=False)
+        ax.set_ylabel('Close price in ￥')
+        ax.set_title('A_Stock %s MACD Indicator' % ("test"))
+        high_values.plot(ax=ax, color='y', lw=1., legend=True, use_index=False)
+        price_values.plot(ax=ax, color='g', lw=1., legend=True, use_index=False)
+        low_values.plot(ax=ax, color='y', lw=1., legend=True, use_index=False)
+        leading_values.plot(ax=ax, color='r', lw=1., legend=True, use_index=False)
 
         # 应用同步缩放
-        ax[1] = plt.subplot(212, sharex=ax[0])
-        k_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # ax[1] = plt.subplot(212, sharex=ax[0])
+        # k_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
         # b_values.plot(ax=ax[1], color='y', lw=1., legend=True, sharex=ax[0], use_index=False)
-        zero_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
+        # zero_values.plot(ax=ax[1], color='g', lw=1., legend=True, sharex=ax[0], use_index=False)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         scale = 100
@@ -96,8 +100,8 @@ class MatPlot:
 if __name__ == "__main__":
     request = HuobiSwapRequest("https://api.btcgateway.pro", "xxxx", "xxxx")
     s = "BTC-USD"
-    p = "5min"
-    c = 1000
+    p = "15min"
+    c = 300
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MatPlot.get_data(s, p, c))
     loop.close()

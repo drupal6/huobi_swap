@@ -11,7 +11,7 @@ def liner_fitting(data_x, data_y):
     average_x = 0
     average_y = 0
     while i < size:
-        sum_xy += data_x[i] * data_y[i];
+        sum_xy += data_x[i] * data_y[i]
         sum_y += data_y[i]
         sum_x += data_x[i]
         sum_sqare_x += data_x[i] * data_x[i]
@@ -38,4 +38,4 @@ def leading_y(x, y):
     :return:
     """
     parameter = liner_fitting(x, y)
-    return parameter[0] * (x[-1] + 1) + parameter[1], parameter[0], parameter[1]
+    return parameter[0] * (x[-1] + 2) + parameter[1], parameter[0], parameter[1]
