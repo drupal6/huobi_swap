@@ -27,12 +27,16 @@ def ma_trend(klines, symbol):
         signal = curr_bar["signal"]
         hist = curr_bar["hist"]
         close = curr_bar["close"]
+        high = curr_bar["high"]
+        low = curr_bar["low"]
         amount = curr_bar["amount"]
         d = {
             "ma": ma,
             "signal": signal,
             "hist": hist,
             "close": close,
+            "high": high,
+            "low": low,
             "amount": amount,
         }
         data[period] = d

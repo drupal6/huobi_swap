@@ -78,6 +78,7 @@ class MatPlot:
         low_values.plot(ax=ax, color='y', lw=1., legend=True, use_index=False)
         leading_values.plot(ax=ax, color='r', lw=1., legend=True, use_index=False)
 
+        plt.scatter([100], [9300], s=100, color='y',marker='^', alpha=0.5)
         # 应用同步缩放
         # ax[1] = plt.subplot(212, sharex=ax[0])
         # k_values.plot(ax=ax[1], color='k', lw=1., legend=True, sharex=ax[0], use_index=False)
