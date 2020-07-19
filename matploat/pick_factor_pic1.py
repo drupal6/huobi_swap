@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 # 图形参数控制
 import pylab as pl
 from datetime import datetime
+from sklearn import svm
 mpl.use('TkAgg')
 pd.set_option('expand_frame_repr', False)  # 当列太多时不换行
 pd.set_option('display.max_rows', 1000)  # 最多显示行数.
@@ -63,7 +64,6 @@ class MatPlot:
                 pd_data.append(append_data)
         df = pd.DataFrame(pd_data, columns=columns_title)
         df.set_index(["Date"], inplace=True)
-        print(df)
         cls.handle_data(df, profit, profit_period, size)
 
     @classmethod
@@ -77,8 +77,112 @@ class MatPlot:
 
         long_new_points = cls.calculate_points(points, profit, profit_period, 1)
         short_new_points = cls.calculate_points(points, profit, profit_period, -1)
+        svm_model = cls.svn_train(df, long_new_points, size)
+        cls.svn_predict(svm_model, df, long_new_points, size)
         buy_x, buy_y, sell_x, sell_y = cls.get_points(long_new_points)
         cls.show(df, buy_x, buy_y, sell_x, sell_y)
+
+    @classmethod
+    def svn_train(cls, df, long_new_points, size):
+        x_train = []  # 特征
+        y_train = []  # 标记
+        p_index = 0
+        p1 = long_new_points[p_index]
+        p2 = long_new_points[p_index + 1]
+        for i in range(0, size):
+            features = []
+            cur_bar = df.iloc[i]
+            features.append(cur_bar["1min_hist"])
+            features.append(cur_bar["5min_hist"])
+            features.append(cur_bar["15min_hist"])
+            features.append(cur_bar["30min_hist"])
+            features.append(cur_bar["60min_hist"])
+            # features.append(cur_bar["4hour_hist"])
+            # features.append(cur_bar["1day_hist"])
+            if i > p2.x and p_index + 2 < len(long_new_points):
+                p_index = p_index + 2
+                p1 = long_new_points[p_index]
+                p2 = long_new_points[p_index + 1]
+            if p_index + 2 > len(long_new_points):
+                break
+            label = False
+            if p1.x <= i < p2.x:
+                label = True
+            x_train.append(features)
+            y_train.append(label)
+        svm_module = svm.SVC()
+        print(y_train)
+        svm_module.fit(x_train, y_train)
+        return svm_module
+
+    # @classmethod
+    # def svn_train(cls, df, long_new_points, size):
+    #     x_train = []  # 特征
+    #     y_train = []  # 标记
+    #     p_index = 0
+    #     p1 = long_new_points[p_index]
+    #     for i in range(0, size):
+    #         features = []
+    #         cur_bar = df.iloc[i]
+    #         features.append(cur_bar["1min_hist"])
+    #         features.append(cur_bar["5min_hist"])
+    #         features.append(cur_bar["15min_hist"])
+    #         features.append(cur_bar["30min_hist"])
+    #         features.append(cur_bar["60min_hist"])
+    #         # features.append(cur_bar["4hour_hist"])
+    #         # features.append(cur_bar["1day_hist"])
+    #
+    #         label = False
+    #         is_break = False
+    #         if p1.x == i:
+    #             label = True
+    #             p_index = p_index + 1
+    #             if p_index >= len(long_new_points):
+    #                 is_break = True
+    #             else:
+    #                 p1 = long_new_points[p_index]
+    #         x_train.append(features)
+    #         y_train.append(label)
+    #         if is_break:
+    #             break
+    #
+    #     svm_module = svm.SVC()
+    #     print(y_train)
+    #     svm_module.fit(x_train, y_train)
+    #     return svm_module
+
+    @classmethod
+    def svn_predict(cls, svm_module, df, long_new_points, size):
+        last_flag = None
+        for i in range(size, len(df)):
+            x = []  # 特征
+            features = []
+            cur_bar = df.iloc[i]
+            features.append(cur_bar["1min_hist"])
+            features.append(cur_bar["5min_hist"])
+            features.append(cur_bar["15min_hist"])
+            features.append(cur_bar["30min_hist"])
+            features.append(cur_bar["60min_hist"])
+            # features.append(cur_bar["4hour_hist"])
+            # features.append(cur_bar["1day_hist"])
+            x.append(features)
+            flag = svm_module.predict(x)
+            if bool(flag):
+                if last_flag is None:
+                    last_flag = True
+                else:
+                    if last_flag is False and long_new_points[-1].d == -1:
+                        long_new_points.append(NodePoint(i, cur_bar["close"], 1))
+                    last_flag = True
+            elif bool(flag) is False:
+                if last_flag is None:
+                    last_flag = False
+                else:
+                    if last_flag is True and long_new_points[-1].d == 1:
+                        long_new_points.append(NodePoint(i, cur_bar["close"], -1))
+                    last_flag = False
+            else:
+                last_flag = None
 
     @classmethod
     def calculate_points(cls, points, profit, profit_period, dir):
@@ -146,8 +250,8 @@ class MatPlot:
         ax.set_title('A_Stock %s factor Indicator' % ("test"))
         price_values.plot(ax=ax, color='g', lw=1., legend=True, use_index=False)
 
-        plt.scatter(buy_x, buy_y, s=20, color='r', marker='^', alpha=0.5)
-        plt.scatter(sell_x, sell_y, s=20, color='b', marker='^', alpha=0.5)
+        plt.scatter(buy_x, buy_y, s=50, color='r', marker='^', alpha=0.5)
+        plt.scatter(sell_x, sell_y, s=50, color='b', marker='^', alpha=0.5)
 
         # 设置间隔，以便图形横坐标可以正常显示（否则数据多了x轴会重叠）
         scale = 100
@@ -163,7 +267,7 @@ class MatPlot:
 
 
 if __name__ == "__main__":
-    c = 300
+    c = 3000
     profit = 0.001
     profit_period = 10
     MatPlot.get_data(profit, profit_period, c)
