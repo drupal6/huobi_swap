@@ -11,9 +11,9 @@ from utils import logger
 from utils import trend_util
 
 
-class GridStrategy(BaseStrategy):
+class PriceGridStrategy(BaseStrategy):
     """
-    网格策略
+    价格网格策略
     """
 
     def __init__(self):
@@ -31,7 +31,7 @@ class GridStrategy(BaseStrategy):
         self.close_long_position_rate = 10  # 平多仓价格atr倍数
         self.close_short_position_rate = 10  # 平空仓价格atr倍数
         self.margin_num_limit = 4  # 最少网格数量要求
-        super(GridStrategy, self).__init__()
+        super(PriceGridStrategy, self).__init__()
         self.load_file()
 
     def load_file(self):

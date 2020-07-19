@@ -8,7 +8,7 @@ from api.model.order import ORDER_STATUS_CANCELED, ORDER_STATUS_SUBMITTED, ORDER
 from utils import logger
 
 
-class NewGridStrategy(EasyBaseStrategy):
+class DepthGridStrategy(EasyBaseStrategy):
     """
     新网格策略
     """
@@ -18,7 +18,7 @@ class NewGridStrategy(EasyBaseStrategy):
         self.atr_per = 0.05   # 最小网格高度要求
         self.same_order_limit = 1  # 同种类型订单数量限制
         self.can_user_amount = 0
-        super(NewGridStrategy, self).__init__()
+        super(DepthGridStrategy, self).__init__()
 
     async def strategy_handle(self):
         if self.contract_size == 0:

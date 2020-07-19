@@ -25,11 +25,11 @@ def initialize():
         from strategy.macd_strategy import MACDStrategy
         return MACDStrategy()
     elif strategy == "GridStrategy":
-        from strategy.grid_strategy import GridStrategy
-        return GridStrategy()
+        from strategy.price_grid_strategy import PriceGridStrategy
+        return PriceGridStrategy()
     elif strategy == "NewGridStrategy":
-        from strategy.new_grid_strategy import NewGridStrategy
-        return NewGridStrategy()
+        from strategy.depth_grid_strategy import DepthGridStrategy
+        return DepthGridStrategy()
     if strategy == "SpotGridStrategy":
         SpotGridStrategy()
     else:
