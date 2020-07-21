@@ -42,7 +42,7 @@ def main():
     if len(sys.argv) > 1:
         config_file = sys.argv[1]
     else:
-        config_file = "config/test/eos-config.json"
+        config_file = "config/test/bsv-config.json"
 
     quant.initialize(config_file)
     bs = initialize()

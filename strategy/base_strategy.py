@@ -13,6 +13,7 @@ from api.huobi.sub.init_order_sub import InitOrderSub
 from api.huobi.sub.init_asset_sub import InitAssetSub
 from api.huobi.sub.init_position_sub import InitPositonSub
 from api.huobi.sub.init_trade_sub import InitTradeSub
+from api.huobi.sub.init_info_sub import InitInfoSub
 from api.model.trade import Trade
 from api.model.asset import Asset
 from api.model.position import Position
@@ -158,6 +159,7 @@ class BaseStrategy:
         """
         mark_sub_param = config.mark_sub
         market = Market(platform=self.platform, wss=self.mark_wss, request=self.request)
+        market.add_sub(InitInfoSub(strategy=self))
         if "kline" in mark_sub_param:
             kline_config = mark_sub_param.get("kline")
             self.klines_max_size = kline_config["max_size"]
