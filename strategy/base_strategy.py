@@ -511,7 +511,7 @@ class BaseStrategy:
         for curb in TradingCurb:
             curbs.append(curb.value)
         return "tc=" + str(curbs) + "\nlr=long_position_weight_rate\nsr=short_position_weight_rate\ndd=[0, 1]\n" \
-                                    "ac=[true, false]"
+                                    "ac=[true, false]\nlp=long_fixed_position\nsp=short_fixed_position"
 
     def show(self):
         return "trading_curb=%s\nauto_curb=%s\nlong_position_weight_rate=%s\nshort_position_weight_rate=%s\n" \
@@ -533,6 +533,14 @@ class BaseStrategy:
         if key == "sr":
             self.short_position_weight_rate = int(value)
             msg = "short_position_weight_rate=%s" % self.short_position_weight_rate
+            self.save_file()
+        if key == "lp":
+            self.long_fixed_position = int(value)
+            msg = "long_fixed_position=%s" % self.long_fixed_position
+            self.save_file()
+        if key == "sp":
+            self.short_fixed_position = int(value)
+            msg = "short_fixed_position=%s" % self.short_fixed_position
             self.save_file()
         if key == "dd":
             if value == "0":
