@@ -129,6 +129,12 @@ class BaseStrategy:
         self.assets = Asset()
         self.orders = {}
         self.position = Position(self.symbol + '/' + self.trade_symbol)
+        self.position.long_avg_open_price = 0
+        self.position.long_quantity = 0
+        self.position.long_avg_price = 0
+        self.position.short_avg_open_price = 0
+        self.position.short_quantity = 0
+        self.position.short_avg_price = 0
 
         self.trade_money = 1  # 10USDT.  每次交易的金额, 修改成自己下单的金额.
         self.min_volume = 1  # 最小的交易数量(张).
@@ -229,8 +235,8 @@ class BaseStrategy:
                 return False
         if len(self.trades) == 0:  # 最近成交记录没有
             return False
-        if not self.position.init:
-            return False
+        # if not self.position.init:
+        #     return False
 
         # 设置计算参数
         self.long_status = 0

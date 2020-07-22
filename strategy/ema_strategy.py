@@ -1,6 +1,7 @@
 import talib
 from strategy.base_strategy import BaseStrategy
 import copy
+from utils import logger
 
 
 class EmaStrategy(BaseStrategy):
@@ -24,6 +25,7 @@ class EmaStrategy(BaseStrategy):
         current_bar = df.iloc[-1]  # 最新的K线 Bar.
         last_bar = df.iloc[-2]
         # 金叉的时候.
+        logger.info((current_bar['fast_ema'] - current_bar['slow_ema']), (last_bar['fast_ema'] - last_bar['slow_ema']), caller = self)
         if current_bar['fast_ema'] > current_bar['slow_ema'] and last_bar['fast_ema'] <= last_bar['slow_ema']:
             self.long_status = 1
             self.long_trade_size = self.min_volume
